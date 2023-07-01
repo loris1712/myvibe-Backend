@@ -151,16 +151,32 @@ router.post('/addResponsessUser', async (req, res) => {
   const selectedTypeVenuesJSON = JSON.stringify(selectedTypeVenues);
 
   try {
-    // L'email non è presente nel database, procedi con la creazione dell'utente
     const updateQuery = 'UPDATE users SET selectedGenres = ?, selectedAmbient = ?, selectedTypeVenues = ?, perfectNight = ? WHERE id = ?';
       pool.query(updateQuery, [selectedGenresJSON, selectedAmbientJSON, selectedTypeVenuesJSON, perfectNight, uid], (updateError, updateResults) => {
         if (updateError) {
           console.error(updateError);
           return res.status(500).json({ error: 'An error occurred. Please try again later.' });
-        } 
+        }
 
-        return res.status(200).json({ uid: uid });
-      }); 
+        // Se l'aggiornamento è avvenuto con successo, esegui la query per cercare l'email
+        const selectQuery = 'SELECT id, email FROM users WHERE id = ?';
+        pool.query(selectQuery, [uid], (selectError, selectResults) => {
+          if (selectError) {
+            console.error(selectError);
+            return res.status(500).json({ error: 'An error occurred. Please try again later.' });
+          }
+
+          // Se la query di ricerca ha restituito dei risultati, invia il valore di uid e email come risposta
+          if (selectResults.length > 0) {
+            const { uid, email } = selectResults[0];
+            return res.status(200).json({ uid, email });
+          }
+
+          // Altrimenti, invia una risposta vuota o un messaggio di errore appropriato
+          return res.status(200).json({ uid: '', email: '' });
+        });
+      });
+
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: 'An error occurred. Please try again later.' });
