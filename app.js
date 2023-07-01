@@ -8,7 +8,7 @@ const usersRoutes = require('./routes/users');
 
 app.get('/', (req, res) => {
   res.json({ message: 'API di esempio su Vercel!' });
-});
+}); 
 
 // Utilizza le rotte per le chiamate API relative ai luoghi
 app.use('/api', placesRoutes);
