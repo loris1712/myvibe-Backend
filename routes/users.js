@@ -169,7 +169,7 @@ router.post('/addResponsessUser', async (req, res) => {
           // Se la query di ricerca ha restituito dei risultati, invia il valore di uid e email come risposta
           if (selectResults.length > 0) {
             const { uid, email } = selectResults[0];
-            return res.status(200).json({ uid, email });
+            return res.status(200).json({ uid: uid, email: email });
           }
 
           // Altrimenti, invia una risposta vuota o un messaggio di errore appropriato
