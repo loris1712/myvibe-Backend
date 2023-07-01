@@ -15,6 +15,10 @@
         "src": "/users/.*",
         "dest": "app.js"
       }
+      {
+        "src": "/.*",
+        "dest": "app.js"
+      }
     ]
   }
   
