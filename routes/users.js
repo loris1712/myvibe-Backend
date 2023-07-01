@@ -195,7 +195,7 @@ router.get('/getEmail', async (req, res) => {
     const query = `
     SELECT email
     FROM users
-    WHERE uid = ?
+    WHERE id = ?
   `; 
       pool.query(query, [uid], (updateError, updateResults) => {
         if (updateError) {
@@ -203,7 +203,7 @@ router.get('/getEmail', async (req, res) => {
           return res.status(500).json({ error: 'An error occurred. Please try again later.' });
         } 
 
-        res.json(results);
+        res.json(updateResults);
       }); 
   } catch (error) {
     console.error(error);
