@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const mysql = require('mysql');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 // Configurazione del database
 const dbConfig = {
