@@ -218,4 +218,69 @@ router.get('/listPlacesFiltered', (req, res) => {
   });
 });
 
+router.get('/suggestedPlaces', (req, res) => {
+  const music = req.query.music;
+  const dressCode = req.query.dresscode;
+  const busiestDay = req.query.busiestday;
+  const openingHours = req.query.openinghours;
+  const pricing = req.query.pricing;
+  const cuisine = req.query.cuisine;
+  const category = req.query.category;
+
+  let query = `
+    SELECT ns.spot_id, ns.name, ns.address, ns.opening_hours, ns.busiest_day, ns.food, ns.music, ns.dress_code, ns.reservation_required, ns.pricing, ns.phone_number, ns.quote, ns.image, ns.description, ns.cuisine, ns.category, ns.latitude, ns.longitude
+    FROM NightlifeSpots ns
+    JOIN Cities c ON ns.city_id = c.city_id
+    WHERE 1=1
+  `;
+
+  let conditions = [];
+
+  if (music) {
+    query += ' AND ns.music LIKE ?';
+    conditions.push(`%${music}%`);
+  }
+
+  if (dressCode) {
+    query += ' AND ns.dress_code LIKE ?';
+    conditions.push(`%${dressCode}%`);
+  }
+
+  if (busiestDay) {
+    query += ' AND ns.busiest_day LIKE ?';
+    conditions.push(`%${busiestDay}%`);
+  }
+
+  if (openingHours) {
+    query += ' AND ns.opening_hours LIKE ?';
+    conditions.push(`%${openingHours}%`);
+  }
+
+  if (pricing) {
+    query += ' AND ns.pricing LIKE ?';
+    conditions.push(`%${pricing}%`);
+  }
+
+  if (cuisine) {
+    query += ' AND ns.cuisine LIKE ?';
+    conditions.push(`%${cuisine}%`);
+  }
+
+  if (category) {
+    query += ' AND ns.category LIKE ?';
+    conditions.push(`%${category}%`);
+  }
+
+  query += ' ORDER BY RAND() LIMIT 8';
+
+  pool.query(query, conditions, (err, results) => {
+    if (err) {
+      console.error('Query error:', err);
+      res.status(500).json({ error: 'Server error' });
+      return;
+    }
+    res.json(results);
+  });
+});
+
 module.exports = router;
