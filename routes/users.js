@@ -148,7 +148,7 @@ router.post('/addFeedback', async (req, res) => {
 
   try {
     const updateQuery = 'INSERT INTO feedbacks (user_id, feedback) VALUES (?, ?)';
-      pool.query(updateQuery, [feedback, uid], (updateError, updateResults) => {
+      pool.query(updateQuery, [uid, feedback], (updateError, updateResults) => {
         if (updateError) {
           console.error(updateError);
           return res.status(500).json({ error: 'An error occurred. Please try again later.' });
