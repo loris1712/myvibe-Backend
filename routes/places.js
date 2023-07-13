@@ -75,19 +75,39 @@ router.get('/bestPlaces', (req, res) => {
 router.get('/filteredHomePlaces', (req, res) => {
   const cityName = req.query.cityName;
   const filter = "%" + req.query.filter + "%";
+  const reservationRequired = "%" + req.query.reservation_required + "%";
+  const busiestDay = "%" + req.query.busiest_day + "%";
+
+  let whereClause = "WHERE c.city_name = ?";
+  const queryParams = [cityName];
+
+  if (req.query.filter) {
+    whereClause += " AND ns.category LIKE ?";
+    queryParams.push(filter);
+  }
+
+  if (req.query.reservation_required) {
+    whereClause += " AND ns.reservation_required LIKE ?";
+    queryParams.push(reservationRequired);
+  }
+
+  if (req.query.busiest_day) {
+    whereClause += " AND ns.busiest_day LIKE ?";
+    queryParams.push(busiestDay);
+  }
 
   const query = `
-  SELECT ns.spot_id, ns.name, ns.address, ns.opening_hours, ns.busiest_day, ns.food, ns.music, ns.dress_code, ns.reservation_required, ns.pricing, ns.phone_number, ns.quote, ns.image, ns.description, ns.cuisine, ns.category, ns.latitude, ns.longitude, GROUP_CONCAT(v.vibe_name SEPARATOR ', ') AS vibes
-  FROM NightlifeSpots ns
-  JOIN Cities c ON ns.city_id = c.city_id
-  LEFT JOIN NightlifeSpots_Vibes nsv ON ns.spot_id = nsv.spot_id
-  LEFT JOIN Vibes v ON nsv.vibe_id = v.vibe_id
-  WHERE c.city_name = ? AND ns.category LIKE ?
-  GROUP BY ns.spot_id
-  LIMIT 10
-  `; 
+    SELECT ns.spot_id, ns.name, ns.address, ns.opening_hours, ns.busiest_day, ns.food, ns.music, ns.dress_code, ns.reservation_required, ns.pricing, ns.phone_number, ns.quote, ns.image, ns.description, ns.cuisine, ns.category, ns.latitude, ns.longitude, GROUP_CONCAT(v.vibe_name SEPARATOR ', ') AS vibes
+    FROM NightlifeSpots ns
+    JOIN Cities c ON ns.city_id = c.city_id
+    LEFT JOIN NightlifeSpots_Vibes nsv ON ns.spot_id = nsv.spot_id
+    LEFT JOIN Vibes v ON nsv.vibe_id = v.vibe_id
+    ${whereClause}
+    GROUP BY ns.spot_id
+    LIMIT 10
+  `;
 
-  pool.query(query, [cityName, filter], (err, results) => {
+  pool.query(query, queryParams, (err, results) => {
     if (err) {
       console.error('Query error:', err);
       res.status(500).json({ error: 'Server error' });
