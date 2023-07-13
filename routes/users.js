@@ -143,6 +143,25 @@ router.post('/addInformationsUser', async (req, res) => {
   }
 });
 
+router.post('/addFeedback', async (req, res) => {
+  const { feedback, uid } = req.body;
+
+  try {
+    const updateQuery = 'INSERT INTO feedbacks (user_id, feedback) VALUES (?, ?)';
+      pool.query(updateQuery, [feedback, uid], (updateError, updateResults) => {
+        if (updateError) {
+          console.error(updateError);
+          return res.status(500).json({ error: 'An error occurred. Please try again later.' });
+        }
+
+        return res.status(200).json({ uid: uid });
+      });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'An error occurred. Please try again later.' });
+  }
+});
+
 router.post('/addResponsessUser', async (req, res) => {
   const { selectedGenres, selectedAmbient, selectedTypeVenues, perfectNight, uid } = req.body;
 
