@@ -144,8 +144,8 @@ router.get('/placesFiltered', (req, res) => {
   }
 
   if (category) {
-    query += ' AND ns.category = ?';
-    params.push(category);
+    query += ' AND ns.category LIKE ?';
+    params.push(`%${category}%`);
   }
 
   if (prices) {
@@ -156,13 +156,13 @@ router.get('/placesFiltered', (req, res) => {
   }
 
   if (music) {
-    query += ' AND ns.music = ?';
-    params.push(music);
+    query += ' AND ns.music LIKE ?';
+    params.push(`%${music}%`);
   }
   
   if (dresscode) {
-    query += ' AND ns.dress_code = ?';
-    params.push(dresscode);
+    query += ' AND ns.dress_code LIKE ?';
+    params.push(`%${dresscode}%`);
   }
 
   if (food) {
@@ -179,6 +179,9 @@ router.get('/placesFiltered', (req, res) => {
   }
 
   query += ' GROUP BY ns.spot_id';
+
+  console.log(params);
+  console.log(query);
 
   pool.query(query, params, (err, results) => {
     if (err) {
