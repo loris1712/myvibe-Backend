@@ -166,7 +166,7 @@ router.post('/addFeedbackSpot', async (req, res) => {
   const { feedback, rankPlace, spot_id, uid } = req.body;
 
   try {
-    const updateQuery = 'INSERT INTO feedbacks_spots (user_id, spot_id, feedback, ranking) VALUES (?, ?, ?, ?)';
+    const updateQuery = 'INSERT INTO feedbacks_spots (user_id, spot_id, feedback, rank) VALUES (?, ?, ?, ?)';
       pool.query(updateQuery, [uid, spot_id, feedback, rankPlace], (updateError, updateResults) => {
         if (updateError) {
           console.error(updateError);
