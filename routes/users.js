@@ -162,6 +162,25 @@ router.post('/addFeedback', async (req, res) => {
   }
 });
 
+router.post('/addFeedbackSpot', async (req, res) => {
+  const { feedback, rankPlace, spot_id, uid } = req.body;
+
+  try {
+    const updateQuery = 'INSERT INTO feedbacks_spots (user_id, spot_id, feedback, ranking) VALUES (?, ?, ?, ?)';
+      pool.query(updateQuery, [uid, spot_id, feedback, rankPlace], (updateError, updateResults) => {
+        if (updateError) {
+          console.error(updateError);
+          return res.status(500).json({ error: 'An error occurred. Please try again later.' });
+        }
+
+        return res.status(200).json({ uid: uid });
+      });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'An error occurred. Please try again later.' });
+  }
+});
+
 router.post('/addResponsessUser', async (req, res) => {
   const { selectedGenres, selectedAmbient, selectedTypeVenues, perfectNight, uid } = req.body;
 
