@@ -28,7 +28,7 @@ router.get('/places', (req, res) => {
   const cityName = req.query.cityName; // Assuming the city name is passed as a query parameter
   
   const query = `
-    SELECT ns.spot_id, ns.name, ns.address, ns.opening_hours, ns.busiest_day, ns.food, ns.music, ns.dress_code, ns.reservation_required, ns.pricing, ns.phone_number, ns.quote, ns.image, ns.description, ns.cuisine, ns.category, ns.latitude, ns.longitude, GROUP_CONCAT(v.vibe_name SEPARATOR ', ') AS vibes
+    SELECT ns.spot_id, ns.name, ns.address, ns.opening_hours, ns.busiest_day, ns.food, ns.music, ns.dress_code, ns.reservation_required, ns.pricing, ns.phone_number, ns.quote, ns.image, ns.description, ns.cuisine, ns.category, ns.latitude, ns.longitude, ns.city_id, GROUP_CONCAT(v.vibe_name SEPARATOR ', ') AS vibes
     FROM NightlifeSpots ns
     JOIN Cities c ON ns.city_id = c.city_id
     LEFT JOIN NightlifeSpots_Vibes nsv ON ns.spot_id = nsv.spot_id
@@ -52,7 +52,7 @@ router.get('/bestPlaces', (req, res) => {
   const cityName = req.query.cityName; // Assuming the city name is passed as a query parameter
   
   const query = `
-  SELECT ns.spot_id, ns.name, ns.address, ns.opening_hours, ns.busiest_day, ns.food, ns.music, ns.dress_code, ns.reservation_required, ns.pricing, ns.phone_number, ns.quote, ns.image, ns.description, ns.cuisine, ns.category, ns.latitude, ns.longitude, GROUP_CONCAT(v.vibe_name SEPARATOR ', ') AS vibes
+  SELECT ns.spot_id, ns.name, ns.address, ns.opening_hours, ns.busiest_day, ns.food, ns.music, ns.dress_code, ns.reservation_required, ns.pricing, ns.phone_number, ns.quote, ns.image, ns.description, ns.cuisine, ns.category, ns.latitude, ns.longitude, ns.city_id, GROUP_CONCAT(v.vibe_name SEPARATOR ', ') AS vibes
   FROM NightlifeSpots ns
   JOIN Cities c ON ns.city_id = c.city_id
   LEFT JOIN NightlifeSpots_Vibes nsv ON ns.spot_id = nsv.spot_id
@@ -97,7 +97,7 @@ router.get('/filteredHomePlaces', (req, res) => {
   }
 
   const query = `
-    SELECT ns.spot_id, ns.name, ns.address, ns.opening_hours, ns.busiest_day, ns.food, ns.music, ns.dress_code, ns.reservation_required, ns.pricing, ns.phone_number, ns.quote, ns.image, ns.description, ns.cuisine, ns.category, ns.latitude, ns.longitude, GROUP_CONCAT(v.vibe_name SEPARATOR ', ') AS vibes
+    SELECT ns.spot_id, ns.name, ns.address, ns.opening_hours, ns.busiest_day, ns.food, ns.music, ns.dress_code, ns.reservation_required, ns.pricing, ns.phone_number, ns.quote, ns.image, ns.description, ns.cuisine, ns.category, ns.latitude, ns.longitude, ns.city_id, GROUP_CONCAT(v.vibe_name SEPARATOR ', ') AS vibes
     FROM NightlifeSpots ns
     JOIN Cities c ON ns.city_id = c.city_id
     LEFT JOIN NightlifeSpots_Vibes nsv ON ns.spot_id = nsv.spot_id
@@ -128,7 +128,7 @@ router.get('/placesFiltered', (req, res) => {
   const reservation = req.query.reservation;
 
   let query = `
-    SELECT ns.spot_id, ns.name, ns.address, ns.opening_hours, ns.busiest_day, ns.food, ns.music, ns.dress_code, ns.reservation_required, ns.pricing, ns.phone_number, ns.quote, ns.image, ns.description, ns.cuisine, ns.category, ns.latitude, ns.longitude, GROUP_CONCAT(v.vibe_name SEPARATOR ', ') AS vibes
+    SELECT ns.spot_id, ns.name, ns.address, ns.opening_hours, ns.busiest_day, ns.food, ns.music, ns.dress_code, ns.reservation_required, ns.pricing, ns.phone_number, ns.quote, ns.image, ns.description, ns.cuisine, ns.category, ns.latitude, ns.longitude, ns.city_id, GROUP_CONCAT(v.vibe_name SEPARATOR ', ') AS vibes
     FROM NightlifeSpots ns
     JOIN Cities c ON ns.city_id = c.city_id
     LEFT JOIN NightlifeSpots_Vibes nsv ON ns.spot_id = nsv.spot_id
@@ -214,7 +214,7 @@ router.get('/cities', (req, res) => {
 router.get('/randomPlace', (req, res) => {
 
   const query = `
-    SELECT ns.spot_id, ns.name, ns.address, ns.opening_hours, ns.busiest_day, ns.food, ns.music, ns.dress_code, ns.reservation_required, ns.pricing, ns.phone_number, ns.quote, ns.image, ns.description, ns.cuisine, ns.category, ns.latitude, ns.longitude 
+    SELECT ns.spot_id, ns.name, ns.address, ns.opening_hours, ns.busiest_day, ns.food, ns.music, ns.dress_code, ns.reservation_required, ns.pricing, ns.phone_number, ns.quote, ns.image, ns.description, ns.cuisine, ns.category, ns.latitude, ns.longitude, ns.city_id
     FROM NightlifeSpots ns
     JOIN Cities c ON ns.city_id = c.city_id
     ORDER BY RAND()
@@ -237,7 +237,7 @@ router.get('/listPlacesFiltered', (req, res) => {
   const cityName = req.query.cityName;
 
   let query = `
-    SELECT ns.spot_id, ns.name, ns.address, ns.opening_hours, ns.busiest_day, ns.food, ns.music, ns.dress_code, ns.reservation_required, ns.pricing, ns.phone_number, ns.quote, ns.image, ns.description, ns.cuisine, ns.category, ns.latitude, ns.longitude
+    SELECT ns.spot_id, ns.name, ns.address, ns.opening_hours, ns.busiest_day, ns.food, ns.music, ns.dress_code, ns.reservation_required, ns.pricing, ns.phone_number, ns.quote, ns.image, ns.description, ns.cuisine, ns.category, ns.latitude, ns.longitude, ns.city_id
     FROM NightlifeSpots ns
     JOIN Cities c ON ns.city_id = c.city_id
     WHERE c.city_name = ?
@@ -281,7 +281,7 @@ router.get('/suggestedPlaces', (req, res) => {
   const category = req.query.category;
 
   let query = `
-    SELECT ns.spot_id, ns.name, ns.address, ns.opening_hours, ns.busiest_day, ns.food, ns.music, ns.dress_code, ns.reservation_required, ns.pricing, ns.phone_number, ns.quote, ns.image, ns.description, ns.cuisine, ns.category, ns.latitude, ns.longitude
+    SELECT ns.spot_id, ns.name, ns.address, ns.opening_hours, ns.busiest_day, ns.food, ns.music, ns.dress_code, ns.reservation_required, ns.pricing, ns.phone_number, ns.quote, ns.image, ns.description, ns.cuisine, ns.category, ns.latitude, ns.longitude, ns.city_id
     FROM NightlifeSpots ns
     JOIN Cities c ON ns.city_id = c.city_id
     WHERE 1=1
