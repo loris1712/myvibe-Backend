@@ -279,6 +279,7 @@ router.get('/suggestedPlaces', (req, res) => {
   const pricing = req.query.pricing;
   const cuisine = req.query.cuisine;
   const category = req.query.category;
+  const city_id = req.query.city_id;
 
   let query = `
     SELECT ns.spot_id, ns.name, ns.address, ns.opening_hours, ns.busiest_day, ns.food, ns.music, ns.dress_code, ns.reservation_required, ns.pricing, ns.phone_number, ns.quote, ns.image, ns.description, ns.cuisine, ns.category, ns.latitude, ns.longitude, ns.city_id
@@ -292,6 +293,11 @@ router.get('/suggestedPlaces', (req, res) => {
   if (music) {
     query += ' AND ns.music LIKE ?';
     conditions.push(`%${music}%`);
+  }
+
+  if (city_id) {
+    query += ' AND ns.city_id = ?';
+    conditions.push(city_id);
   }
 
   if (dressCode) {
