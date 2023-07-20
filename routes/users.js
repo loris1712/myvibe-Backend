@@ -163,11 +163,11 @@ router.post('/addFeedback', async (req, res) => {
 });
 
 router.post('/addFeedbackSpot', async (req, res) => {
-  const { feedback, rankPlace, spot_id, uid } = req.body;
+  const { feedback, rankPlace, overallVibe, musicSelection, serviceProvided, cleanliness, drinkFoodOptions, crowdAtmosphere, moneyValue, spot_id, uid } = req.body;
 
   try {
-    const updateQuery = 'INSERT INTO feedbacks_spots (user_id, spot_id, feedback, rank) VALUES (?, ?, ?, ?)';
-      pool.query(updateQuery, [uid, spot_id, feedback, rankPlace], (updateError, updateResults) => {
+    const updateQuery = 'INSERT INTO feedbacks_spots (user_id, spot_id, feedback, rank, overallVibe, musicSelection, serviceProvided, cleanliness, drinkFoodOptions, crowdAtmosphere, moneyValue) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+      pool.query(updateQuery, [uid, spot_id, feedback, rankPlace, overallVibe, musicSelection, serviceProvided, cleanliness, drinkFoodOptions, crowdAtmosphere, moneyValue], (updateError, updateResults) => {
         if (updateError) {
           console.error(updateError);
           return res.status(500).json({ error: 'An error occurred. Please try again later.' });
