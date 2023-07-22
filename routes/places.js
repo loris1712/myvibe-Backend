@@ -211,6 +211,25 @@ router.get('/cities', (req, res) => {
   });
 });
 
+router.get('/getCityPlace', (req, res) => {
+  const city_id = req.query.city_id; // Assuming the city name is passed as a query parameter
+  
+  const query = `
+    SELECT city_name, city_id
+    FROM Cities
+    where city_id = ?
+  `;
+
+  pool.query(query, [city_id], (err, results) => {
+    if (err) {
+      console.error('Query error:', err);
+      res.status(500).json({ error: 'Server error' });
+      return;
+    }
+    res.json(results);
+  });
+});
+
 router.get('/randomPlace', (req, res) => {
 
   const query = `
