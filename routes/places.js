@@ -82,7 +82,7 @@ router.get('/filteredHomePlaces', (req, res) => {
   const queryParams = [cityName];
 
   if (req.query.filter) {
-    whereClause += " AND ns.category LIKE ?";
+    whereClause += " AND ns.category = ?";
     queryParams.push(filter);
   }
 
