@@ -26,18 +26,20 @@ pool.query('SELECT 1 + 1', (err, rows) => {
 // Rotta per ottenere tutti i luoghi
 router.get('/places', (req, res) => {
   const cityName = req.query.cityName; // Assuming the city name is passed as a query parameter
+  const id = req.query.id; // Assuming the city name is passed as a query parameter
   
   const query = `
-    SELECT ns.spot_id, ns.name, ns.address, ns.opening_hours, ns.busiest_day, ns.food, ns.music, ns.dress_code, ns.reservation_required, ns.pricing, ns.phone_number, ns.quote, ns.image, ns.description, ns.cuisine, ns.category, ns.latitude, ns.longitude, ns.city_id, GROUP_CONCAT(v.vibe_name SEPARATOR ', ') AS vibes
-    FROM NightlifeSpots ns
+    SELECT *
+    FROM placesList ns
     JOIN Cities c ON ns.city_id = c.city_id
     LEFT JOIN NightlifeSpots_Vibes nsv ON ns.spot_id = nsv.spot_id
     LEFT JOIN Vibes v ON nsv.vibe_id = v.vibe_id
+    JOIN users u ON u.id = ?
     WHERE c.city_name = ?
-    GROUP BY ns.spot_id;
+      AND FIND_IN_SET(u.Persona, ns.Personas) > 0;  
   `; 
 
-  pool.query(query, [cityName], (err, results) => {
+  pool.query(query, [id, cityName], (err, results) => {
     if (err) {
       console.error('Query error:', err);
       res.status(500).json({ error: 'Server error' });
@@ -52,8 +54,8 @@ router.get('/bestPlaces', (req, res) => {
   const cityName = req.query.cityName; // Assuming the city name is passed as a query parameter
   
   const query = `
-  SELECT ns.spot_id, ns.name, ns.address, ns.opening_hours, ns.busiest_day, ns.food, ns.music, ns.dress_code, ns.reservation_required, ns.pricing, ns.phone_number, ns.quote, ns.image, ns.description, ns.cuisine, ns.category, ns.latitude, ns.longitude, ns.city_id, GROUP_CONCAT(v.vibe_name SEPARATOR ', ') AS vibes
-  FROM NightlifeSpots ns
+  SELECT *
+  FROM placesList ns
   JOIN Cities c ON ns.city_id = c.city_id
   LEFT JOIN NightlifeSpots_Vibes nsv ON ns.spot_id = nsv.spot_id
   LEFT JOIN Vibes v ON nsv.vibe_id = v.vibe_id
@@ -97,8 +99,8 @@ router.get('/filteredHomePlaces', (req, res) => {
   }
 
   const query = `
-    SELECT ns.spot_id, ns.name, ns.address, ns.opening_hours, ns.busiest_day, ns.food, ns.music, ns.dress_code, ns.reservation_required, ns.pricing, ns.phone_number, ns.quote, ns.image, ns.description, ns.cuisine, ns.category, ns.latitude, ns.longitude, ns.city_id, GROUP_CONCAT(v.vibe_name SEPARATOR ', ') AS vibes
-    FROM NightlifeSpots ns
+    SELECT *
+    FROM placesList ns
     JOIN Cities c ON ns.city_id = c.city_id
     LEFT JOIN NightlifeSpots_Vibes nsv ON ns.spot_id = nsv.spot_id
     LEFT JOIN Vibes v ON nsv.vibe_id = v.vibe_id
@@ -117,7 +119,6 @@ router.get('/filteredHomePlaces', (req, res) => {
   });
 });
 
-//filtered
 router.get('/placesFiltered', (req, res) => {
   const cityName = req.query.cityName;
   const category = req.query.category;
@@ -126,18 +127,20 @@ router.get('/placesFiltered', (req, res) => {
   const dresscode = req.query.dresscode;
   const food = req.query.food;
   const reservation = req.query.reservation;
+  const id = req.query.id;
 
   let query = `
-    SELECT ns.spot_id, ns.name, ns.address, ns.opening_hours, ns.busiest_day, ns.food, ns.music, ns.dress_code, ns.reservation_required, ns.pricing, ns.phone_number, ns.quote, ns.image, ns.description, ns.cuisine, ns.category, ns.latitude, ns.longitude, ns.city_id, GROUP_CONCAT(v.vibe_name SEPARATOR ', ') AS vibes
-    FROM NightlifeSpots ns
+    SELECT *
+    FROM placesList ns
     JOIN Cities c ON ns.city_id = c.city_id
     LEFT JOIN NightlifeSpots_Vibes nsv ON ns.spot_id = nsv.spot_id
     LEFT JOIN Vibes v ON nsv.vibe_id = v.vibe_id
+    JOIN users u ON u.id = ? AND FIND_IN_SET(u.Persona, ns.personas) > 0
     WHERE 1=1
   `;
 
-  const params = [];
- 
+  const params = [id]; // Inseriamo l'ID nei parametri
+
   if (cityName) {
     query += ' AND c.city_name = ?';
     params.push(cityName);
@@ -151,17 +154,17 @@ router.get('/placesFiltered', (req, res) => {
   if (prices) {
     const priceArray = prices.split(',');
     const placeholders = priceArray.map(() => '?').join(',');
-    query += ` AND ns.pricing IN (${placeholders})`;
+    query += ` AND ns.range_value IN (${placeholders})`;
     params.push(...priceArray);
   }
 
   if (music) {
-    query += ' AND ns.music LIKE ?';
+    query += ' AND ns.Music LIKE ?';
     params.push(`%${music}%`);
   }
-  
+
   if (dresscode) {
-    query += ' AND ns.dress_code LIKE ?';
+    query += ' AND ns.Dresscode LIKE ?';
     params.push(`%${dresscode}%`);
   }
 
@@ -172,7 +175,7 @@ router.get('/placesFiltered', (req, res) => {
       query += ' AND ns.food = 0';
     }
   }
-  
+
   if (reservation) {
     query += ' AND ns.reservation_required = ?';
     params.push(reservation);
@@ -190,8 +193,10 @@ router.get('/placesFiltered', (req, res) => {
       return;
     }
     res.json(results);
+    console.log(results);
   });
 });
+
 
 router.get('/cities', (req, res) => {
   //const cityName = req.query.cityName; // Assuming the city name is passed as a query parameter
@@ -233,8 +238,8 @@ router.get('/getCityPlace', (req, res) => {
 router.get('/randomPlace', (req, res) => {
 
   const query = `
-    SELECT ns.spot_id, ns.name, ns.address, ns.opening_hours, ns.busiest_day, ns.food, ns.music, ns.dress_code, ns.reservation_required, ns.pricing, ns.phone_number, ns.quote, ns.image, ns.description, ns.cuisine, ns.category, ns.latitude, ns.longitude, ns.city_id
-    FROM NightlifeSpots ns
+    SELECT *
+    FROM placesList ns
     JOIN Cities c ON ns.city_id = c.city_id
     ORDER BY RAND()
     LIMIT 2
@@ -256,8 +261,8 @@ router.get('/listPlacesFiltered', (req, res) => {
   const cityName = req.query.cityName;
 
   let query = `
-    SELECT ns.spot_id, ns.name, ns.address, ns.opening_hours, ns.busiest_day, ns.food, ns.music, ns.dress_code, ns.reservation_required, ns.pricing, ns.phone_number, ns.quote, ns.image, ns.description, ns.cuisine, ns.category, ns.latitude, ns.longitude, ns.city_id
-    FROM NightlifeSpots ns
+    SELECT *
+    FROM placesList ns
     JOIN Cities c ON ns.city_id = c.city_id
     WHERE c.city_name = ?
   `;
@@ -266,12 +271,12 @@ router.get('/listPlacesFiltered', (req, res) => {
   conditions.push(cityName);
 
   if (music) {
-    query += ' AND ns.music LIKE ?';
+    query += ' AND ns.Music LIKE ?';
     conditions.push(`%${music}%`);
   }
   
   if (dressCode) {
-    query += ' AND ns.dress_code LIKE ?';
+    query += ' AND ns.Dresscode LIKE ?';
     conditions.push(`%${dressCode}%`);
   }
 
@@ -301,8 +306,8 @@ router.get('/suggestedPlaces', (req, res) => {
   const city_id = req.query.city_id;
 
   let query = `
-    SELECT ns.spot_id, ns.name, ns.address, ns.opening_hours, ns.busiest_day, ns.food, ns.music, ns.dress_code, ns.reservation_required, ns.pricing, ns.phone_number, ns.quote, ns.image, ns.description, ns.cuisine, ns.category, ns.latitude, ns.longitude, ns.city_id
-    FROM NightlifeSpots ns
+    SELECT *
+    FROM placesList ns
     JOIN Cities c ON ns.city_id = c.city_id
     WHERE 1=1
   `;
@@ -310,7 +315,7 @@ router.get('/suggestedPlaces', (req, res) => {
   let conditions = [];
 
   if (music) {
-    query += ' AND ns.music LIKE ?';
+    query += ' AND ns.Music LIKE ?';
     conditions.push(`%${music}%`);
   }
 
@@ -320,7 +325,7 @@ router.get('/suggestedPlaces', (req, res) => {
   }
 
   if (dressCode) {
-    query += ' AND ns.dress_code LIKE ?';
+    query += ' AND ns.Dresscode LIKE ?';
     conditions.push(`%${dressCode}%`);
   }
 
@@ -335,7 +340,7 @@ router.get('/suggestedPlaces', (req, res) => {
   }
 
   if (pricing) {
-    query += ' AND ns.pricing LIKE ?';
+    query += ' AND ns.range_value LIKE ?';
     conditions.push(`%${pricing}%`);
   }
 

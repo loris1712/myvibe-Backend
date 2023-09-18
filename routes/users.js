@@ -37,6 +37,20 @@ router.get('/user', (req, res) => {
   });
 });
 
+// Get personas
+router.get('/personas', (req, res) => {
+  const query = 'SELECT * FROM Personas';
+  pool.query(query, [], (err, results) => {
+    if (err) {
+      console.error('Query error:', err);
+      res.status(500).json({ error: 'Server error' });
+      return;
+    }
+    console.log(results);
+    return res.status(200).json(results);
+  });
+});
+
 // Login
 
 router.post('/login', (req, res) => {
@@ -182,15 +196,17 @@ router.post('/addFeedbackSpot', async (req, res) => {
 });
 
 router.post('/addResponsessUser', async (req, res) => {
-  const { selectedGenres, selectedAmbient, selectedTypeVenues, perfectNight, uid } = req.body;
+  const { question1, question2, question3, question4, question5, highestScore, uid } = req.body;
 
-  const selectedGenresJSON = JSON.stringify(selectedGenres);
-  const selectedAmbientJSON = JSON.stringify(selectedAmbient);
-  const selectedTypeVenuesJSON = JSON.stringify(selectedTypeVenues);
+  const question1JSON = JSON.stringify(question1);
+  const question2JSON = JSON.stringify(question2);
+  const question3JSON = JSON.stringify(question3);
+  const question4JSON = JSON.stringify(question4);
+  const question5JSON = JSON.stringify(question5);
 
   try {
-    const updateQuery = 'UPDATE users SET selectedGenres = ?, selectedAmbient = ?, selectedTypeVenues = ?, perfectNight = ? WHERE id = ?';
-      pool.query(updateQuery, [selectedGenresJSON, selectedAmbientJSON, selectedTypeVenuesJSON, perfectNight, uid], (updateError, updateResults) => {
+    const updateQuery = 'UPDATE users SET question1 = ?, question2 = ?, question3 = ?, question4 = ?, question5 = ?, Persona = ? WHERE id = ?';
+      pool.query(updateQuery, [question1JSON, question2JSON, question3JSON, question4JSON, question5JSON, highestScore, uid], (updateError, updateResults) => {
         if (updateError) {
           console.error(updateError);
           return res.status(500).json({ error: 'An error occurred. Please try again later.' });
