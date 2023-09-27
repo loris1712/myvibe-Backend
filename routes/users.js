@@ -46,7 +46,7 @@ router.get('/personas', (req, res) => {
       res.status(500).json({ error: 'Server error' });
       return;
     }
-    console.log(results);
+    //console.log(results);
     return res.status(200).json(results);
   });
 });

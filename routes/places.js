@@ -183,8 +183,8 @@ router.get('/placesFiltered', (req, res) => {
 
   query += ' GROUP BY ns.spot_id';
 
-  console.log(params);
-  console.log(query);
+  //console.log(params);
+  //console.log(query);
 
   pool.query(query, params, (err, results) => {
     if (err) {
@@ -193,7 +193,7 @@ router.get('/placesFiltered', (req, res) => {
       return;
     }
     res.json(results);
-    console.log(results);
+    //console.log(results);
   });
 });
 
@@ -280,10 +280,10 @@ router.get('/listPlacesFiltered', (req, res) => {
     conditions.push(`%${dressCode}%`);
   }
 
-  console.log(conditions);
+  //console.log(conditions);
   query += ' ORDER BY RAND()';
 
-  console.log(query);
+  //console.log(query);
 
   pool.query(query, conditions, (err, results) => {
     if (err) {
