@@ -88,6 +88,40 @@ router.post('/login', (req, res) => {
   });
 });
 
+router.delete('/deleteUser/:id', async (req, res) => {
+  const userId = req.params.id;
+
+  try {
+    // Verifica se l'utente esiste nel database
+    const checkQuery = 'SELECT * FROM users WHERE id = ?';
+    pool.query(checkQuery, [userId], (checkError, checkResults) => {
+      if (checkError) {
+        console.error(checkError);
+        return res.status(500).json({ error: 'An error occurred. Please try again later.' });
+      }
+
+      if (checkResults.length === 0) {
+        // L'utente non è presente nel database
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      // Elimina l'utente dal database
+      const deleteQuery = 'DELETE FROM users WHERE id = ?';
+      pool.query(deleteQuery, [userId], (deleteError, deleteResults) => {
+        if (deleteError) {
+          console.error(deleteError);
+          return res.status(500).json({ error: 'An error occurred. Please try again later.' });
+        }
+
+        return res.status(200).json({ message: 'User deleted successfully' });
+      });
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'An error occurred. Please try again later.' });
+  }
+});
+
 const saltRounds = 10;
 router.post('/createUser', async (req, res) => {
   const { email, password } = req.body;
