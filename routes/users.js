@@ -55,7 +55,7 @@ router.get('/personas', (req, res) => {
 
 router.post('/login', (req, res) => {
   const { email, password } = req.query;
-  // Esegui la query per ottenere i dati dell'utente corrispondenti all'email fornita
+  
   const query = 'SELECT * FROM users WHERE email = ?';
   pool.query(query, [email], async (err, results) => {
     if (err) {
@@ -85,6 +85,26 @@ router.post('/login', (req, res) => {
       console.error('Error comparing passwords:', error);
       return res.status(500).json({ error: 'Server error' });
     }
+  });
+});
+
+router.post('/login2', (req, res) => {
+  const { fullname } = req.query;
+  
+  const query = 'SELECT * FROM users WHERE fullname = ?';
+  pool.query(query, [fullname], async (err, results) => {
+    if (err) {
+      console.error('Query error:', err);
+      return res.status(500).json({ error: 'Server error' });
+    }
+
+    if (results.length === 0) {
+      // Nessun utente trovato con l'email fornita
+      return res.status(401).json({ error: 'Invalid fullname' });
+    }
+
+    const user = results[0];
+    return res.status(200).json(user);
   });
 });
 
@@ -171,6 +191,46 @@ router.post('/createUser', async (req, res) => {
   }
 });
 
+router.post('/createUser2', async (req, res) => {
+  const { fullname } = req.body;
+
+  // Validazione dei dati
+  if (!fullname) {
+    return res.status(400).json({ error: 'Please provide fullname' });
+  }
+
+  try {
+    // Verifica se l'email è già presente nel database
+    const checkQuery = 'SELECT * FROM users WHERE fullname = ?';
+    pool.query(checkQuery, [fullname], (checkError, checkResults) => {
+      if (checkError) {
+        console.error(checkError);
+        return res.status(500).json({ error: 'An error occurred. Please try again later.' });
+      }
+
+      if (checkResults.length > 0) {
+        // L'email è già presente nel database
+        return res.status(409).json({ error: 'Fullname already exists' });
+      }
+
+      // L'email non è presente nel database, procedi con la creazione dell'utente
+      const insertQuery = 'INSERT INTO users (fullname) VALUES (?)';
+        pool.query(insertQuery, [fullname], (insertError, insertResults) => {
+          if (insertError) {
+            console.error(insertError);
+            return res.status(500).json({ error: 'An error occurred. Please try again later.' });
+          }
+
+          const userId = insertResults.insertId;
+          return res.status(200).json({ uid: userId });
+        });
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'An error occurred. Please try again later.' });
+  }
+});
+
 router.post('/addInformationsUser', async (req, res) => {
   const { firstName, lastName, birthDate, selectedGender, uid } = req.body;
 
@@ -247,7 +307,7 @@ router.post('/addResponsessUser', async (req, res) => {
         }
 
         // Se l'aggiornamento è avvenuto con successo, esegui la query per cercare l'email
-        const selectQuery = 'SELECT id, email FROM users WHERE id = ?';
+        const selectQuery = 'SELECT id, fullname FROM users WHERE id = ?';
         pool.query(selectQuery, [uid], (selectError, selectResults) => {
           if (selectError) {
             console.error(selectError);
