@@ -59,8 +59,7 @@ router.get('/allPlaces', (req, res) => {
     JOIN Cities c ON ns.city_id = c.city_id
     LEFT JOIN NightlifeSpots_Vibes nsv ON ns.spot_id = nsv.spot_id
     LEFT JOIN Vibes v ON nsv.vibe_id = v.vibe_id
-    WHERE c.city_name = ?
-      AND FIND_IN_SET(ns.Personas) > 0;  
+    WHERE c.city_name = ? 
   `; 
 
   pool.query(query, [cityName], (err, results) => {
