@@ -49,6 +49,30 @@ router.get('/places', (req, res) => {
   });
 });
 
+// Rotta per ottenere tutti i luoghi
+router.get('/allPlaces', (req, res) => {
+  const cityName = req.query.cityName;
+  
+  const query = `
+    SELECT *
+    FROM placesList ns
+    JOIN Cities c ON ns.city_id = c.city_id
+    LEFT JOIN NightlifeSpots_Vibes nsv ON ns.spot_id = nsv.spot_id
+    LEFT JOIN Vibes v ON nsv.vibe_id = v.vibe_id
+    WHERE c.city_name = ?
+      AND FIND_IN_SET(ns.Personas) > 0;  
+  `; 
+
+  pool.query(query, [cityName], (err, results) => {
+    if (err) {
+      console.error('Query error:', err);
+      res.status(500).json({ error: 'Server error' });
+      return;
+    }
+    res.json(results);
+  });
+});
+
 // Migliori luoghi
 router.get('/bestPlaces', (req, res) => {
   const cityName = req.query.cityName; // Assuming the city name is passed as a query parameter
