@@ -57,7 +57,6 @@ router.get('/places', (req, res) => {
   )
     
   `; 
-  console.log(req.query); // Verifica i parametri nella query
 
   pool.query(query, [id, cityName], (err, results) => {
     if (err) {
@@ -123,22 +122,26 @@ router.get('/bestPlaces', (req, res) => {
 // Ricerca dei locali
 router.get('/search', (req, res) => {
   const text = req.query.text.toLowerCase();
+  const city = req.query.city;
   
   const query = `
-    SELECT *
-    FROM placesList
-    WHERE 
-      (FIND_IN_SET(LOWER(?), LOWER(name)) > 0 OR 
-      FIND_IN_SET(LOWER(?), LOWER(query)) > 0 OR 
-      FIND_IN_SET(LOWER(?), LOWER(Music)) > 0 OR 
-      FIND_IN_SET(LOWER(?), LOWER(Dresscode)) > 0 OR 
-      FIND_IN_SET(LOWER(?), LOWER(type)) > 0 OR 
-      FIND_IN_SET(LOWER(?), LOWER(subtypes)) > 0 OR 
-      LOWER(street) LIKE ? OR 
-      LOWER(description) LIKE ?);
+  SELECT ns.spot_id, ns.*, c.city_name
+  FROM placesList ns
+  JOIN Cities c ON ns.city_id = c.city_id
+  WHERE 
+    (FIND_IN_SET(LOWER(?), LOWER(ns.name)) > 0 OR 
+    FIND_IN_SET(LOWER(?), LOWER(ns.query)) > 0 OR 
+    FIND_IN_SET(LOWER(?), LOWER(ns.Music)) > 0 OR 
+    FIND_IN_SET(LOWER(?), LOWER(ns.Dresscode)) > 0 OR 
+    FIND_IN_SET(LOWER(?), LOWER(ns.type)) > 0 OR 
+    FIND_IN_SET(LOWER(?), LOWER(ns.subtypes)) > 0 OR 
+    LOWER(ns.street) LIKE ? OR 
+    LOWER(ns.description) LIKE ?)
+  AND c.city_name = ?;
+  
   `;
 
-  pool.query(query, [text, text, text, text, text, text, `%${text}%`, `%${text}%`], (err, results) => {
+  pool.query(query, [text, text, text, text, text, text, `%${text}%`, `%${text}%`, city], (err, results) => {
     if (err) {
       console.error('Query error:', err);
       res.status(500).json({ error: 'Server error' });
@@ -176,26 +179,22 @@ router.get('/search', (req, res) => {
 
 router.get('/filteredHomePlaces', (req, res) => {
   const cityName = req.query.cityName;
-  const filter = "%" + req.query.filter + "%";
-  const reservationRequired = "%" + req.query.reservation_required + "%";
-  const busiestDay = "%" + req.query.busiest_day + "%";
-
-  let whereClause = "WHERE c.city_name = ?";
   const queryParams = [cityName];
+  let whereClause = "WHERE c.city_name = ?";
 
   if (req.query.filter) {
-    whereClause += " AND ns.category LIKE ?";
-    queryParams.push(filter);
+    whereClause += " AND (FIND_IN_SET(LOWER(?), LOWER(ns.type)) > 0)";
+    queryParams.push(req.query.filter);
   }
 
   if (req.query.reservation_required) {
-    whereClause += " AND ns.reservation_required LIKE ?";
-    queryParams.push(reservationRequired);
+    whereClause += " OR ns.reservation_required LIKE ?";
+    queryParams.push("%" + req.query.reservation_required + "%");
   }
 
   if (req.query.busiest_day) {
-    whereClause += " AND ns.busiest_day LIKE ?";
-    queryParams.push(busiestDay);
+    whereClause += " OR ns.busiest_day LIKE ?";
+    queryParams.push("%" + req.query.busiest_day + "%");
   }
 
   const query = `
@@ -206,7 +205,89 @@ router.get('/filteredHomePlaces', (req, res) => {
     LEFT JOIN Vibes v ON nsv.vibe_id = v.vibe_id
     ${whereClause}
     GROUP BY ns.spot_id
-    LIMIT 10
+    ORDER BY RAND()
+    LIMIT 20
+  `;
+
+  pool.query(query, queryParams, (err, results) => {
+    if (err) {
+      console.error('Query error:', err);
+      res.status(500).json({ error: 'Server error' });
+      return;
+    }
+    res.json(results);
+  });
+});
+
+router.get('/filteredHomePlaces2', (req, res) => {
+  const cityName = req.query.cityName;
+  const filter = req.query.filter;
+  const queryParams = [cityName, filter];
+
+  const query = `
+    SELECT *, ns.spot_id
+    FROM placesList ns
+    JOIN Cities c ON ns.city_id = c.city_id
+    LEFT JOIN NightlifeSpots_Vibes nsv ON ns.spot_id = nsv.spot_id
+    LEFT JOIN Vibes v ON nsv.vibe_id = v.vibe_id
+    WHERE c.city_name = ? OR (FIND_IN_SET(LOWER(?), LOWER(ns.type)) > 0)
+    GROUP BY ns.spot_id
+    ORDER BY RAND()
+    LIMIT 20
+  `;
+
+  pool.query(query, queryParams, (err, results) => {
+    if (err) {
+      console.error('Query error:', err);
+      res.status(500).json({ error: 'Server error' });
+      return;
+    }
+    res.json(results);
+  });
+});
+
+router.get('/filteredHomePlacesMusic', (req, res) => {
+  const cityName = req.query.cityName;
+  const filter = req.query.filter;
+  const queryParams = [cityName, filter];
+
+  const query = `
+    SELECT *, ns.spot_id
+    FROM placesList ns
+    JOIN Cities c ON ns.city_id = c.city_id
+    LEFT JOIN NightlifeSpots_Vibes nsv ON ns.spot_id = nsv.spot_id
+    LEFT JOIN Vibes v ON nsv.vibe_id = v.vibe_id
+    WHERE c.city_name = ? OR (FIND_IN_SET(LOWER(?), LOWER(ns.Music)) > 0)
+    GROUP BY ns.spot_id
+    ORDER BY RAND()
+    LIMIT 20
+  `;
+
+  pool.query(query, queryParams, (err, results) => {
+    if (err) {
+      console.error('Query error:', err);
+      res.status(500).json({ error: 'Server error' });
+      return;
+    }
+    res.json(results);
+  });
+});
+
+router.get('/filteredHomePlacesMusic2', (req, res) => {
+  const cityName = req.query.cityName;
+  const filter = req.query.filter;
+  const queryParams = [cityName, filter];
+
+  const query = `
+    SELECT *, ns.spot_id
+    FROM placesList ns
+    JOIN Cities c ON ns.city_id = c.city_id
+    LEFT JOIN NightlifeSpots_Vibes nsv ON ns.spot_id = nsv.spot_id
+    LEFT JOIN Vibes v ON nsv.vibe_id = v.vibe_id
+    WHERE c.city_name = ? OR (FIND_IN_SET(LOWER(?), LOWER(ns.Music)) > 0)
+    GROUP BY ns.spot_id
+    ORDER BY RAND()
+    LIMIT 20
   `;
 
   pool.query(query, queryParams, (err, results) => {
