@@ -242,7 +242,29 @@ router.get('/filteredHomePlaces2', (req, res) => {
       res.status(500).json({ error: 'Server error' });
       return;
     }
-    res.json(results);
+
+    // Se non ci sono risultati, esegui un'altra query per luoghi simili basati su altri criteri
+    if (results.length === 0) {
+      const similarQuery = `
+        SELECT *, ns.spot_id
+        FROM placesList ns
+        JOIN Cities c ON ns.city_id = c.city_id
+        WHERE c.city_name = ?
+        ORDER BY RAND()
+        LIMIT 20
+      `;
+
+      pool.query(similarQuery, [cityName], (similarErr, similarResults) => {
+        if (similarErr) {
+          console.error('Similar query error:', similarErr);
+          res.status(500).json({ error: 'Server error' });
+          return;
+        }
+        res.json(similarResults);
+      });
+    } else {
+      res.json(results);
+    }
   });
 });
 
