@@ -488,12 +488,12 @@ router.get('/listPlacesFiltered', (req, res) => {
   conditions.push(cityName);
 
   if (music) {
-    query += ' AND ns.Music LIKE ?';
+    query += ' OR ns.Music LIKE ?';
     conditions.push(`%${music}%`);
   }
   
   if (dressCode) {
-    query += ' AND ns.Dresscode LIKE ?';
+    query += ' OR (FIND_IN_SET(LOWER(?), LOWER(ns.Dresscode)) > 0)';
     conditions.push(`%${dressCode}%`);
   }
 
