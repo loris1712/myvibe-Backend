@@ -2,6 +2,9 @@ const express = require('express');
 const router = express.Router();
 const mysql = require('mysql');
 
+const natural = require('natural');
+const tokenizer = new natural.WordTokenizer();
+
 // Configurazione del database
 const dbConfig = {
   connectionLimit : 1000,
@@ -29,15 +32,32 @@ router.get('/places', (req, res) => {
   const id = req.query.id; // Assuming the city name is passed as a query parameter
   
   const query = `
-    SELECT *
-    FROM placesList ns
-    JOIN Cities c ON ns.city_id = c.city_id
-    LEFT JOIN NightlifeSpots_Vibes nsv ON ns.spot_id = nsv.spot_id
-    LEFT JOIN Vibes v ON nsv.vibe_id = v.vibe_id
-    JOIN users u ON u.id = ?
-    WHERE c.city_name = ?
-      AND FIND_IN_SET(u.Persona, ns.Personas) > 0;  
+  SELECT *, ns.spot_id
+  FROM placesList ns
+  JOIN Cities c ON ns.city_id = c.city_id
+  LEFT JOIN NightlifeSpots_Vibes nsv ON ns.spot_id = nsv.spot_id
+  LEFT JOIN Vibes v ON nsv.vibe_id = v.vibe_id
+  JOIN users u ON u.id = ?
+  WHERE c.city_name = ?
+  AND (
+      (u.Persona IN (1, 4, 8, 11) AND 
+       (FIND_IN_SET('1', ns.Personas) > 0 OR FIND_IN_SET('4', ns.Personas) > 0 OR FIND_IN_SET('8', ns.Personas) > 0 OR FIND_IN_SET('11', ns.Personas) > 0))
+      OR
+      (u.Persona IN (2, 7) AND 
+       (FIND_IN_SET('2', ns.Personas) > 0 OR FIND_IN_SET('7', ns.Personas) > 0))
+      OR
+      (u.Persona IN (3, 12, 15) AND 
+       (FIND_IN_SET('3', ns.Personas) > 0 OR FIND_IN_SET('12', ns.Personas) > 0 OR FIND_IN_SET('15', ns.Personas) > 0))
+      OR
+      (u.Persona IN (5, 9, 14) AND 
+       (FIND_IN_SET('5', ns.Personas) > 0 OR FIND_IN_SET('9', ns.Personas) > 0 OR FIND_IN_SET('14', ns.Personas) > 0))
+      OR
+      (u.Persona IN (6, 10, 13) AND 
+       (FIND_IN_SET('6', ns.Personas) > 0 OR FIND_IN_SET('10', ns.Personas) > 0 OR FIND_IN_SET('13', ns.Personas) > 0))
+  )
+    
   `; 
+  console.log(req.query); // Verifica i parametri nella query
 
   pool.query(query, [id, cityName], (err, results) => {
     if (err) {
@@ -45,7 +65,10 @@ router.get('/places', (req, res) => {
       res.status(500).json({ error: 'Server error' });
       return;
     }
+    
+    //console.log(results);
     res.json(results);
+    
   });
 });
 
@@ -54,7 +77,7 @@ router.get('/allPlaces', (req, res) => {
   const cityName = req.query.cityName;
   
   const query = `
-    SELECT *
+    SELECT *, ns.spot_id
     FROM placesList ns
     JOIN Cities c ON ns.city_id = c.city_id
     LEFT JOIN NightlifeSpots_Vibes nsv ON ns.spot_id = nsv.spot_id
@@ -77,7 +100,7 @@ router.get('/bestPlaces', (req, res) => {
   const cityName = req.query.cityName; // Assuming the city name is passed as a query parameter
   
   const query = `
-  SELECT *
+  SELECT *, ns.spot_id
   FROM placesList ns
   JOIN Cities c ON ns.city_id = c.city_id
   LEFT JOIN NightlifeSpots_Vibes nsv ON ns.spot_id = nsv.spot_id
@@ -94,6 +117,60 @@ router.get('/bestPlaces', (req, res) => {
       return;
     }
     res.json(results);
+  });
+});
+
+// Ricerca dei locali
+router.get('/search', (req, res) => {
+  const text = req.query.text.toLowerCase();
+  
+  const query = `
+    SELECT *
+    FROM placesList
+    WHERE 
+      (FIND_IN_SET(LOWER(?), LOWER(name)) > 0 OR 
+      FIND_IN_SET(LOWER(?), LOWER(query)) > 0 OR 
+      FIND_IN_SET(LOWER(?), LOWER(Music)) > 0 OR 
+      FIND_IN_SET(LOWER(?), LOWER(Dresscode)) > 0 OR 
+      FIND_IN_SET(LOWER(?), LOWER(type)) > 0 OR 
+      FIND_IN_SET(LOWER(?), LOWER(subtypes)) > 0 OR 
+      LOWER(street) LIKE ? OR 
+      LOWER(description) LIKE ?);
+  `;
+
+  pool.query(query, [text, text, text, text, text, text, `%${text}%`, `%${text}%`], (err, results) => {
+    if (err) {
+      console.error('Query error:', err);
+      res.status(500).json({ error: 'Server error' });
+      return;
+    }
+
+    // Se non ci sono risultati, cerca risultati simili
+    if (results.length === 0) {
+      // Esegui una ricerca fuzzy o una ricerca parziale qui
+      // Ad esempio, usando natural.JaroWinklerDistance per trovare corrispondenze simili
+      const inputTokens = tokenizer.tokenize(text);
+      const similarityThreshold = 0.8; // Modifica il valore del threshold a seconda di quanto vuoi che la corrispondenza sia simile
+      const similarResults = [];
+
+      results.forEach(result => {
+        const nameTokens = tokenizer.tokenize(result.name.toLowerCase());
+        const queryTokens = tokenizer.tokenize(result.query.toLowerCase());
+
+        const nameSimilarity = natural.JaroWinklerDistance(inputTokens.join(' '), nameTokens.join(' '));
+        const querySimilarity = natural.JaroWinklerDistance(inputTokens.join(' '), queryTokens.join(' '));
+
+        if (nameSimilarity >= similarityThreshold || querySimilarity >= similarityThreshold) {
+          similarResults.push(result);
+        }
+      });
+
+      // Restituisci risultati simili
+      res.json(similarResults);
+    } else {
+      // Se ci sono risultati, restituisci quelli
+      res.json(results);
+    }
   });
 });
 
@@ -122,7 +199,7 @@ router.get('/filteredHomePlaces', (req, res) => {
   }
 
   const query = `
-    SELECT *
+    SELECT *, ns.spot_id
     FROM placesList ns
     JOIN Cities c ON ns.city_id = c.city_id
     LEFT JOIN NightlifeSpots_Vibes nsv ON ns.spot_id = nsv.spot_id
@@ -153,13 +230,28 @@ router.get('/placesFiltered', (req, res) => {
   const id = req.query.id;
 
   let query = `
-    SELECT *
+    SELECT *, ns.spot_id
     FROM placesList ns
     JOIN Cities c ON ns.city_id = c.city_id
     LEFT JOIN NightlifeSpots_Vibes nsv ON ns.spot_id = nsv.spot_id
     LEFT JOIN Vibes v ON nsv.vibe_id = v.vibe_id
-    JOIN users u ON u.id = ? AND FIND_IN_SET(u.Persona, ns.personas) > 0
-    WHERE 1=1
+    JOIN users u ON u.id = ? 
+    AND (
+      (u.Persona IN (1, 4, 8, 11) AND 
+       (FIND_IN_SET('1', ns.Personas) > 0 OR FIND_IN_SET('4', ns.Personas) > 0 OR FIND_IN_SET('8', ns.Personas) > 0 OR FIND_IN_SET('11', ns.Personas) > 0))
+      OR
+      (u.Persona IN (2, 7) AND 
+       (FIND_IN_SET('2', ns.Personas) > 0 OR FIND_IN_SET('7', ns.Personas) > 0))
+      OR
+      (u.Persona IN (3, 12, 15) AND 
+       (FIND_IN_SET('3', ns.Personas) > 0 OR FIND_IN_SET('12', ns.Personas) > 0 OR FIND_IN_SET('15', ns.Personas) > 0))
+      OR
+      (u.Persona IN (5, 9, 14) AND 
+       (FIND_IN_SET('5', ns.Personas) > 0 OR FIND_IN_SET('9', ns.Personas) > 0 OR FIND_IN_SET('14', ns.Personas) > 0))
+      OR
+      (u.Persona IN (6, 10, 13) AND 
+       (FIND_IN_SET('6', ns.Personas) > 0 OR FIND_IN_SET('10', ns.Personas) > 0 OR FIND_IN_SET('13', ns.Personas) > 0))
+  )
   `;
 
   const params = [id]; // Inseriamo l'ID nei parametri
@@ -216,7 +308,6 @@ router.get('/placesFiltered', (req, res) => {
       return;
     }
     res.json(results);
-    //console.log(results);
   });
 });
 
@@ -261,7 +352,7 @@ router.get('/getCityPlace', (req, res) => {
 router.get('/randomPlace', (req, res) => {
 
   const query = `
-    SELECT *
+  SELECT *, ns.spot_id
     FROM placesList ns
     JOIN Cities c ON ns.city_id = c.city_id
     ORDER BY RAND()
@@ -284,7 +375,7 @@ router.get('/listPlacesFiltered', (req, res) => {
   const cityName = req.query.cityName;
 
   let query = `
-    SELECT *
+  SELECT *, ns.spot_id
     FROM placesList ns
     JOIN Cities c ON ns.city_id = c.city_id
     WHERE c.city_name = ?
@@ -329,7 +420,7 @@ router.get('/suggestedPlaces', (req, res) => {
   const city_id = req.query.city_id;
 
   let query = `
-    SELECT *
+  SELECT *, ns.spot_id
     FROM placesList ns
     JOIN Cities c ON ns.city_id = c.city_id
     WHERE 1=1
