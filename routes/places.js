@@ -128,20 +128,19 @@ router.get('/search', (req, res) => {
   SELECT ns.spot_id, ns.*, c.city_name
   FROM placesList ns
   JOIN Cities c ON ns.city_id = c.city_id
-  WHERE 
-    (FIND_IN_SET(LOWER(?), LOWER(ns.name)) > 0 OR 
-    FIND_IN_SET(LOWER(?), LOWER(ns.query)) > 0 OR 
-    FIND_IN_SET(LOWER(?), LOWER(ns.Music)) > 0 OR 
-    FIND_IN_SET(LOWER(?), LOWER(ns.Dresscode)) > 0 OR 
-    FIND_IN_SET(LOWER(?), LOWER(ns.type)) > 0 OR 
-    FIND_IN_SET(LOWER(?), LOWER(ns.subtypes)) > 0 OR 
-    LOWER(ns.street) LIKE ? OR 
-    LOWER(ns.description) LIKE ?)
-  AND c.city_name = ?;
-  
+  WHERE LOWER(ns.name) LIKE LOWER(?) OR 
+    LOWER(ns.query) LIKE LOWER(?) OR 
+    LOWER(ns.Music) LIKE LOWER(?) OR 
+    LOWER(ns.Dresscode) LIKE LOWER(?) OR
+    LOWER(ns.type) LIKE LOWER(?) OR 
+    LOWER(ns.subtypes) LIKE LOWER(?) OR
+    LOWER(ns.street) LIKE LOWER(?) OR
+    LOWER(ns.description) LIKE LOWER(?)
+    AND c.city_name = ?
+    LIMIT 35;
   `;
 
-  pool.query(query, [text, text, text, text, text, text, `%${text}%`, `%${text}%`, city], (err, results) => {
+  pool.query(query, [`%${text}%`, `%${text}%`,`%${text}%`, `%${text}%`,`%${text}%`, `%${text}%`, `%${text}%`, `%${text}%`, city], (err, results) => {
     if (err) {
       console.error('Query error:', err);
       res.status(500).json({ error: 'Server error' });
@@ -150,29 +149,32 @@ router.get('/search', (req, res) => {
 
     // Se non ci sono risultati, cerca risultati simili
     if (results.length === 0) {
-      // Esegui una ricerca fuzzy o una ricerca parziale qui
-      // Ad esempio, usando natural.JaroWinklerDistance per trovare corrispondenze simili
-      const inputTokens = tokenizer.tokenize(text);
-      const similarityThreshold = 0.8; // Modifica il valore del threshold a seconda di quanto vuoi che la corrispondenza sia simile
-      const similarResults = [];
+      const similarNameQuery = `
+      SELECT ns.spot_id, ns.*, c.city_name
+      FROM placesList ns
+      JOIN Cities c ON ns.city_id = c.city_id
+      WHERE LOWER(ns.name) LIKE LOWER(?) OR 
+        LOWER(ns.query) LIKE LOWER(?) OR 
+        LOWER(ns.Music) LIKE LOWER(?) OR 
+        LOWER(ns.Dresscode) LIKE LOWER(?) OR
+        LOWER(ns.type) LIKE LOWER(?) OR 
+        LOWER(ns.subtypes) LIKE LOWER(?) OR
+        LOWER(ns.street) LIKE LOWER(?) OR
+        LOWER(ns.description) LIKE LOWER(?)
+        LIMIT 35;
+        
+      `;
 
-      results.forEach(result => {
-        const nameTokens = tokenizer.tokenize(result.name.toLowerCase());
-        const queryTokens = tokenizer.tokenize(result.query.toLowerCase());
-
-        const nameSimilarity = natural.JaroWinklerDistance(inputTokens.join(' '), nameTokens.join(' '));
-        const querySimilarity = natural.JaroWinklerDistance(inputTokens.join(' '), queryTokens.join(' '));
-
-        if (nameSimilarity >= similarityThreshold || querySimilarity >= similarityThreshold) {
-          similarResults.push(result);
+      pool.query(similarNameQuery, [`%${text}%`, `%${text}%`,`%${text}%`, `%${text}%`,`%${text}%`, `%${text}%`, `%${text}%`, `%${text}%`], (similarErr, similarResults) => {
+        if (similarErr) {
+          console.error('Similar name query error:', similarErr);
+          res.status(500).json({ error: 'Server error' });
+          return;
         }
+        return res.status(200).json(similarResults);
       });
-
-      // Restituisci risultati simili
-      res.json(similarResults);
     } else {
-      // Se ci sono risultati, restituisci quelli
-      res.json(results);
+      return res.status(200).json(results);
     }
   });
 });
