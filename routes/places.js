@@ -610,20 +610,33 @@ router.get('/suggestedPlaces', (req, res) => {
 router.post('/savePlace', async (req, res) => {
   const { placeId, userId, type } = req.query;
   try {
-    const updateQuery = 'INSERT saved_places (place_id, user_id, public) VALUES (?, ?, ?)';
-      pool.query(updateQuery, [placeId, userId, type], (updateError, updateResults) => {
-        if (updateError) {
-          console.error(updateError);
+    const checkQuery = 'SELECT * FROM saved_places WHERE place_id = ? AND user_id = ?';
+    pool.query(checkQuery, [placeId, userId], (checkError, checkResults) => {
+      if (checkError) {
+        console.error(checkError);
+        return res.status(500).json({ error: 'An error occurred. Please try again later.' });
+      }
+
+      if (checkResults.length > 0) {
+        return res.status(400).json({ error: 'Il posto è già stato salvato.' });
+      }
+
+      const insertQuery = 'INSERT INTO saved_places (place_id, user_id, public) VALUES (?, ?, ?)';
+      pool.query(insertQuery, [placeId, userId, type], (insertError, insertResults) => {
+        if (insertError) {
+          console.error(insertError);
           return res.status(500).json({ error: 'An error occurred. Please try again later.' });
-        } 
+        }
 
         return res.status(200).json({ status: 200 });
       });
+    });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: 'An error occurred. Please try again later.' });
   }
 });
+
 
 router.get('/getPlaces', (req, res) => {
   const public = req.query.public; 
