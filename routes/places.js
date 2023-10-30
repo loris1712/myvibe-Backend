@@ -146,36 +146,56 @@ router.get('/search', (req, res) => {
       res.status(500).json({ error: 'Server error' });
       return;
     }
-
-    // Se non ci sono risultati, cerca risultati simili
+    
+    
     if (results.length === 0) {
       const similarNameQuery = `
-      SELECT ns.spot_id, ns.*, c.city_name
-      FROM placesList ns
-      JOIN Cities c ON ns.city_id = c.city_id
-      WHERE LOWER(ns.name) LIKE LOWER(?) OR 
-        LOWER(ns.query) LIKE LOWER(?) OR 
-        LOWER(ns.Music) LIKE LOWER(?) OR 
-        LOWER(ns.Dresscode) LIKE LOWER(?) OR
-        LOWER(ns.type) LIKE LOWER(?) OR 
-        LOWER(ns.subtypes) LIKE LOWER(?) OR
-        LOWER(ns.street) LIKE LOWER(?) OR
-        LOWER(ns.description) LIKE LOWER(?)
-        LIMIT 35;
-        
+        SELECT ns.spot_id, ns.*, c.city_name
+        FROM placesList ns
+        JOIN Cities c ON ns.city_id = c.city_id
+        WHERE LOWER(ns.name) LIKE LOWER(?) OR 
+          LOWER(ns.query) LIKE LOWER(?) OR 
+          LOWER(ns.Music) LIKE LOWER(?) OR 
+          LOWER(ns.Dresscode) LIKE LOWER(?) OR
+          LOWER(ns.type) LIKE LOWER(?) OR 
+          LOWER(ns.subtypes) LIKE LOWER(?) OR
+          LOWER(ns.street) LIKE LOWER(?) OR
+          LOWER(ns.description) LIKE LOWER(?)
+          LIMIT 35;
       `;
-
+    
       pool.query(similarNameQuery, [`%${text}%`, `%${text}%`,`%${text}%`, `%${text}%`,`%${text}%`, `%${text}%`, `%${text}%`, `%${text}%`], (similarErr, similarResults) => {
         if (similarErr) {
           console.error('Similar name query error:', similarErr);
           res.status(500).json({ error: 'Server error' });
           return;
         }
-        return res.status(200).json(similarResults);
+        console.log(similarResults);
+        if (similarResults.length === 0) {
+          const anotherQuery = `
+            SELECT ns.spot_id, ns.*
+            FROM placesList ns
+            ORDER BY RAND()
+            LIMIT 35;
+          `;
+          
+          pool.query(anotherQuery, (anotherErr, anotherResults) => {
+            if (anotherErr) {
+              console.error('Another query error:', anotherErr);
+              res.status(500).json({ error: 'Server error' });
+              return;
+            }
+            
+            res.status(200).json({ source: 'We did not find results, these are similar results.', results: anotherResults });
+          });
+        } else {
+          res.status(200).json({ source: 'We only found similar results in your city.', results: similarResults });
+        }
       });
     } else {
-      return res.status(200).json(results);
+      res.status(200).json({ source: '', results: results });
     }
+    
   });
 });
 
@@ -418,7 +438,6 @@ router.get('/placesFiltered', (req, res) => {
 
 
 router.get('/cities', (req, res) => {
-  //const cityName = req.query.cityName; // Assuming the city name is passed as a query parameter
   
   const query = `
     SELECT city_name, city_id
@@ -431,6 +450,7 @@ router.get('/cities', (req, res) => {
       res.status(500).json({ error: 'Server error' });
       return;
     }
+    
     res.json(results);
   });
 });
@@ -455,16 +475,18 @@ router.get('/getCityPlace', (req, res) => {
 });
 
 router.get('/randomPlace', (req, res) => {
+  const cityName = req.query.cityName;
 
   const query = `
-  SELECT *, ns.spot_id
+  SELECT *, ns.spot_id, c.city_name
     FROM placesList ns
     JOIN Cities c ON ns.city_id = c.city_id
+    WHERE c.city_name = ?;
     ORDER BY RAND()
     LIMIT 2
   `; 
 
-  pool.query(query, (err, results) => {
+  pool.query(query, [cityName], (err, results) => {
     if (err) {
       console.error('Query error:', err);
       res.status(500).json({ error: 'Server error' });
@@ -582,6 +604,68 @@ router.get('/suggestedPlaces', (req, res) => {
       return;
     }
     res.json(results);
+  });
+});
+
+router.post('/savePlace', async (req, res) => {
+  const { placeId, userId, type } = req.query;
+  try {
+    const updateQuery = 'INSERT saved_places (place_id, user_id, public) VALUES (?, ?, ?)';
+      pool.query(updateQuery, [placeId, userId, type], (updateError, updateResults) => {
+        if (updateError) {
+          console.error(updateError);
+          return res.status(500).json({ error: 'An error occurred. Please try again later.' });
+        } 
+
+        return res.status(200).json({ status: 200 });
+      });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'An error occurred. Please try again later.' });
+  }
+});
+
+router.get('/getPlaces', (req, res) => {
+  const public = req.query.public; 
+  const user_id = req.query.userId;
+  
+  const query = `
+        SELECT placesList.*
+        FROM saved_places
+        INNER JOIN placesList ON saved_places.place_id = placesList.spot_id
+        WHERE saved_places.user_id = ? AND saved_places.public = ?
+    `;
+
+  pool.query(query, [user_id, public], (err, results) => {
+    if (err) {
+      console.error('Query error:', err);
+      res.status(500).json({ error: 'Server error' });
+      return;
+    }
+    
+    res.json(results);
+    
+  });
+});
+
+router.delete('/removePlace', (req, res) => {
+  const spot_id = req.query.spot_id; 
+  const user_id = req.query.user_id;
+  
+  const query = `
+        DELETE FROM saved_places
+        WHERE saved_places.place_id = ? AND saved_places.user_id = ?
+    `;
+
+  pool.query(query, [spot_id, user_id], (err, results) => {
+    if (err) {
+      console.error('Query error:', err);
+      res.status(500).json({ error: 'Server error' });
+      return;
+    }
+    
+    return res.status(200).json({ status: 200 });
+    
   });
 });
 

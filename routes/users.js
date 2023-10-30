@@ -307,7 +307,7 @@ router.post('/addResponsessUser', async (req, res) => {
         }
 
         // Se l'aggiornamento è avvenuto con successo, esegui la query per cercare l'email
-        const selectQuery = 'SELECT id, fullname FROM users WHERE id = ?';
+        const selectQuery = 'SELECT * FROM users WHERE id = ?';
         pool.query(selectQuery, [uid], (selectError, selectResults) => {
           if (selectError) {
             console.error(selectError);
@@ -317,6 +317,7 @@ router.post('/addResponsessUser', async (req, res) => {
           // Se la query di ricerca ha restituito dei risultati, invia il valore di uid e email come risposta
           if (selectResults.length > 0) {
             const { uid, email } = selectResults[0];
+            
             return res.status(200).json({ uid: uid, email: email });
           }
 
