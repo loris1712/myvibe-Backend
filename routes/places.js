@@ -417,9 +417,9 @@ router.get('/placesFiltered', (req, res) => {
   }
 
   if (reservation) {
-    query += ' AND ns.reservation_required = ?';
+    query += " AND ns.reservation_links IS NOT NULL AND ns.reservation_links <> ''";
     params.push(reservation);
-  }
+}
 
   query += ' GROUP BY ns.spot_id';
 
