@@ -481,7 +481,7 @@ router.get('/randomPlace', (req, res) => {
   SELECT *, ns.spot_id, c.city_name
     FROM placesList ns
     JOIN Cities c ON ns.city_id = c.city_id
-    WHERE c.city_name = ?;
+    WHERE c.city_name = ?
     ORDER BY RAND()
     LIMIT 2
   `; 
@@ -609,16 +609,17 @@ router.get('/suggestedPlaces', (req, res) => {
 
 router.post('/savePlace', async (req, res) => {
   const { placeId, userId, type } = req.query;
+  
   try {
-    const checkQuery = 'SELECT * FROM saved_places WHERE place_id = ? AND user_id = ?';
-    pool.query(checkQuery, [placeId, userId], (checkError, checkResults) => {
+    const checkQuery = 'SELECT * FROM saved_places WHERE place_id = ? AND user_id = ? AND public = ?';
+    pool.query(checkQuery, [placeId, userId, type], (checkError, checkResults) => {
       if (checkError) {
         console.error(checkError);
         return res.status(500).json({ error: 'An error occurred. Please try again later.' });
       }
 
       if (checkResults.length > 0) {
-        return res.status(400).json({ error: 'Il posto è già stato salvato.' });
+        return res.status(400).json({ error: 'The place has already been saved.' });
       }
 
       const insertQuery = 'INSERT INTO saved_places (place_id, user_id, public) VALUES (?, ?, ?)';
@@ -627,7 +628,6 @@ router.post('/savePlace', async (req, res) => {
           console.error(insertError);
           return res.status(500).json({ error: 'An error occurred. Please try again later.' });
         }
-
         return res.status(200).json({ status: 200 });
       });
     });
@@ -664,13 +664,14 @@ router.get('/getPlaces', (req, res) => {
 router.delete('/removePlace', (req, res) => {
   const spot_id = req.query.spot_id; 
   const user_id = req.query.user_id;
+  const type = req.query.type;
   
   const query = `
         DELETE FROM saved_places
-        WHERE saved_places.place_id = ? AND saved_places.user_id = ?
+        WHERE saved_places.place_id = ? AND saved_places.user_id = ? AND saved_places.public = ?
     `;
 
-  pool.query(query, [spot_id, user_id], (err, results) => {
+  pool.query(query, [spot_id, user_id, type], (err, results) => {
     if (err) {
       console.error('Query error:', err);
       res.status(500).json({ error: 'Server error' });
