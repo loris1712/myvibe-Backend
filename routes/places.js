@@ -637,7 +637,6 @@ router.post('/savePlace', async (req, res) => {
   }
 });
 
-
 router.get('/getPlaces', (req, res) => {
   const public = req.query.public; 
   const user_id = req.query.userId;
@@ -672,6 +671,71 @@ router.delete('/removePlace', (req, res) => {
     `;
 
   pool.query(query, [spot_id, user_id, type], (err, results) => {
+    if (err) {
+      console.error('Query error:', err);
+      res.status(500).json({ error: 'Server error' });
+      return;
+    }
+    
+    return res.status(200).json({ status: 200 });
+    
+  });
+});
+
+router.post('/savePlan', async (req, res) => {
+  const { userId, date, stops, title } = req.body;
+  
+  try {
+      const insertQuery = 'INSERT INTO event_planned (user_id, date_event, title) VALUES (?, ?, ?)';
+      pool.query(insertQuery, [userId, date, title], (insertError, insertResults) => {
+        if (insertError) {
+          console.error(insertError);
+          return res.status(500).json({ error: 'An error occurred. Please try again later.' });
+        }
+
+        const planId = insertResults.insertId;
+        const insertStopQuery = 'INSERT INTO event_planned_stops (id_event, stop_order, id_spot, time) VALUES ?';
+        const stopValues = stops.map((stop, index) => [planId, index + 1, stop.venue_id, stop.time]);
+        const formattedQuery = mysql.format(insertStopQuery, [stopValues]);
+
+        pool.query(formattedQuery, (insertError, insertResults) => {
+          if (insertError) {
+            console.error(insertError);
+            return res.status(500).json({ error: 'An error occurred. Please try again later.' });
+          }
+        });
+
+        return res.status(200).json({ status: 200, planId: planId });
+      });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'An error occurred. Please try again later.' });
+  }
+});
+
+router.get('/getPlans', (req, res) => { 
+  const user_id = req.query.userId;
+  
+  const query = `SELECT * FROM event_planned WHERE user_id = ?`;
+
+  pool.query(query, [user_id], (err, results) => {
+    if (err) {
+      console.error('Query error:', err);
+      res.status(500).json({ error: 'Server error' });
+      return;
+    }
+
+    res.json(results);
+  });
+});
+
+router.delete('/removePlan', (req, res) => {
+  const id_event = req.query.id_event; 
+  const user_id = req.query.user_id;
+  
+  const query = `DELETE FROM event_planned WHERE event_planned.id_event = ? AND event_planned.user_id = ? `;
+
+  pool.query(query, [id_event, user_id], (err, results) => {
     if (err) {
       console.error('Query error:', err);
       res.status(500).json({ error: 'Server error' });
