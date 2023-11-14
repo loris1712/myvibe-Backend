@@ -440,7 +440,7 @@ router.get('/placesFiltered', (req, res) => {
 router.get('/cities', (req, res) => {
   
   const query = `
-    SELECT city_name, city_id
+    SELECT city_name, city_id, url
     FROM Cities
   `;
 
