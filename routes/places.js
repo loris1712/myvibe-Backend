@@ -716,9 +716,47 @@ router.post('/savePlan', async (req, res) => {
 router.get('/getPlans', (req, res) => { 
   const user_id = req.query.userId;
   
-  const query = `SELECT * FROM event_planned WHERE user_id = ?`;
+  const query = `SELECT * FROM event_planned WHERE user_id = ? ORDER BY date_event DESC`;
 
   pool.query(query, [user_id], (err, results) => {
+    if (err) {
+      console.error('Query error:', err);
+      res.status(500).json({ error: 'Server error' });
+      return;
+    }
+
+    res.json(results);
+  });
+});
+
+router.get('/getPlan', (req, res) => { 
+  const id_plan = req.query.idPlan;
+  
+  const query = `SELECT * FROM event_planned WHERE id_event = ?`;
+
+  pool.query(query, [id_plan], (err, results) => {
+    if (err) {
+      console.error('Query error:', err);
+      res.status(500).json({ error: 'Server error' });
+      return;
+    }
+
+    res.json(results);
+  });
+});
+
+router.get('/getPlanStops', (req, res) => { 
+  const id_plan = req.query.idPlan;
+  
+  const query = `
+  SELECT eps.*, pl.* 
+  FROM event_planned_stops eps
+  JOIN placesList pl ON eps.id_spot = pl.spot_id
+  WHERE eps.id_event = ?
+  ORDER BY eps.stop_order ASC;
+  `;
+
+  pool.query(query, [id_plan], (err, results) => {
     if (err) {
       console.error('Query error:', err);
       res.status(500).json({ error: 'Server error' });
@@ -745,6 +783,42 @@ router.delete('/removePlan', (req, res) => {
     return res.status(200).json({ status: 200 });
     
   });
+});
+
+router.post('/acceptPlan', async (req, res) => {
+  const { email, idPlan } = req.body;
+
+  try {
+    // Prima controlla se l'email con l'idPlan specificato esiste già
+    const checkQuery = 'SELECT * FROM event_participants WHERE email = ? AND id_event = ?';
+    
+    pool.query(checkQuery, [email, idPlan], (checkError, checkResults) => {
+      if (checkError) {
+        console.error(checkError);
+        return res.status(500).json({ error: 'An error occurred while checking the participant.' });
+      }
+
+      // Se esiste già un partecipante con questa email e idPlan, non inserire un duplicato
+      if (checkResults.length > 0) {
+        return res.status(200).json({ message: 'Participant already exists for this plan.' });
+      } else {
+        // Se non esiste, procedi con l'inserimento
+        const insertQuery = 'INSERT INTO event_participants (email, id_event) VALUES (?, ?)';
+
+        pool.query(insertQuery, [email, idPlan], (insertError, insertResults) => {
+          if (insertError) {
+            console.error(insertError);
+            return res.status(500).json({ error: 'An error occurred. Please try again later.' });
+          }
+          
+          return res.status(200).json({ message: 'Invitation successfully accepted.', subtitle: 'Good fun!'});
+        });
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'An error occurred. Please try again later.' });
+  }
 });
 
 module.exports = router;
