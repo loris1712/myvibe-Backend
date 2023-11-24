@@ -119,83 +119,56 @@ router.get('/bestPlaces', (req, res) => {
   });
 });
 
-// Ricerca dei locali
 router.get('/search', (req, res) => {
-  const text = req.query.text.toLowerCase();
+  const text = `%${req.query.text.trim().toLowerCase()}%`;
   const city = req.query.city;
-  
-  const query = `
-  SELECT ns.spot_id, ns.*, c.city_name
-  FROM placesList ns
-  JOIN Cities c ON ns.city_id = c.city_id
-  WHERE LOWER(ns.name) LIKE LOWER(?) OR 
-    LOWER(ns.query) LIKE LOWER(?) OR 
-    LOWER(ns.Music) LIKE LOWER(?) OR 
-    LOWER(ns.Dresscode) LIKE LOWER(?) OR
-    LOWER(ns.type) LIKE LOWER(?) OR 
-    LOWER(ns.subtypes) LIKE LOWER(?) OR
-    LOWER(ns.street) LIKE LOWER(?) OR
-    LOWER(ns.description) LIKE LOWER(?)
-    AND c.city_name = ?
-    LIMIT 35;
+
+  const baseQuery = `
+    SELECT ns.spot_id, ns.*, c.city_name
+    FROM placesList ns
+    JOIN Cities c ON ns.city_id = c.city_id
+    WHERE (
+      LOWER(ns.name) LIKE ? OR 
+      LOWER(ns.query) LIKE ? OR 
+      LOWER(ns.Music) LIKE ? OR 
+      LOWER(ns.Dresscode) LIKE ? OR
+      LOWER(ns.type) LIKE ? OR 
+      LOWER(ns.subtypes) LIKE ? OR
+      LOWER(ns.street) LIKE ? OR
+      LOWER(ns.description) LIKE ?
+    )
   `;
 
-  pool.query(query, [`%${text}%`, `%${text}%`,`%${text}%`, `%${text}%`,`%${text}%`, `%${text}%`, `%${text}%`, `%${text}%`, city], (err, results) => {
+  const cityQuery = city ? `${baseQuery} AND c.city_name = ? LIMIT 35;` : `${baseQuery} LIMIT 35;`;
+
+  pool.query(cityQuery, city ? [text, text, text, text, text, text, text, text, city] : [text, text, text, text, text, text, text, text], (err, results) => {
     if (err) {
       console.error('Query error:', err);
       res.status(500).json({ error: 'Server error' });
       return;
     }
-    
-    
+
     if (results.length === 0) {
-      const similarNameQuery = `
+      const randomQuery = `
         SELECT ns.spot_id, ns.*, c.city_name
         FROM placesList ns
         JOIN Cities c ON ns.city_id = c.city_id
-        WHERE LOWER(ns.name) LIKE LOWER(?) OR 
-          LOWER(ns.query) LIKE LOWER(?) OR 
-          LOWER(ns.Music) LIKE LOWER(?) OR 
-          LOWER(ns.Dresscode) LIKE LOWER(?) OR
-          LOWER(ns.type) LIKE LOWER(?) OR 
-          LOWER(ns.subtypes) LIKE LOWER(?) OR
-          LOWER(ns.street) LIKE LOWER(?) OR
-          LOWER(ns.description) LIKE LOWER(?)
-          LIMIT 35;
+        ORDER BY RAND()
+        LIMIT 35;
       `;
-    
-      pool.query(similarNameQuery, [`%${text}%`, `%${text}%`,`%${text}%`, `%${text}%`,`%${text}%`, `%${text}%`, `%${text}%`, `%${text}%`], (similarErr, similarResults) => {
-        if (similarErr) {
-          console.error('Similar name query error:', similarErr);
+
+      pool.query(randomQuery, (randomErr, randomResults) => {
+        if (randomErr) {
+          console.error('Random query error:', randomErr);
           res.status(500).json({ error: 'Server error' });
           return;
         }
-        console.log(similarResults);
-        if (similarResults.length === 0) {
-          const anotherQuery = `
-            SELECT ns.spot_id, ns.*
-            FROM placesList ns
-            ORDER BY RAND()
-            LIMIT 35;
-          `;
-          
-          pool.query(anotherQuery, (anotherErr, anotherResults) => {
-            if (anotherErr) {
-              console.error('Another query error:', anotherErr);
-              res.status(500).json({ error: 'Server error' });
-              return;
-            }
-            
-            res.status(200).json({ source: 'We did not find results, these are similar results.', results: anotherResults });
-          });
-        } else {
-          res.status(200).json({ source: 'We only found similar results in your city.', results: similarResults });
-        }
+
+        res.status(200).json({ source: 'Random results as no direct matches found.', results: randomResults });
       });
     } else {
-      res.status(200).json({ source: '', results: results });
+      res.status(200).json({ results });
     }
-    
   });
 });
 
