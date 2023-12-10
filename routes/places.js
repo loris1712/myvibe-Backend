@@ -106,6 +106,7 @@ router.get('/bestPlaces', (req, res) => {
   LEFT JOIN Vibes v ON nsv.vibe_id = v.vibe_id
   WHERE c.city_name = ?
   GROUP BY ns.spot_id
+  ORDER BY RAND()
   LIMIT 10
   `; 
 
