@@ -119,6 +119,34 @@ router.get('/bestPlaces', (req, res) => {
   });
 });
 
+//holiday places
+router.get('/holidayPlaces', (req, res) => {
+  const cityName = req.query.cityName;
+  const holiday = req.query.holiday; 
+
+  const query = `
+  SELECT *, ns.spot_id
+  FROM holiday_places hp
+  JOIN placesList ns ON hp.id_spot = ns.spot_id
+  JOIN Cities c ON ns.city_id = c.city_id
+  LEFT JOIN NightlifeSpots_Vibes nsv ON ns.spot_id = nsv.spot_id
+  LEFT JOIN Vibes v ON nsv.vibe_id = v.vibe_id
+  WHERE c.city_name = ? AND hp.holiday = ?
+  GROUP BY ns.spot_id
+  ORDER BY RAND()
+  LIMIT 20
+  `; 
+
+  pool.query(query, [cityName, holiday], (err, results) => {
+    if (err) {
+      console.error('Query error:', err);
+      res.status(500).json({ error: 'Server error' });
+      return;
+    }
+    res.json(results);
+  });
+});
+
 router.get('/search', (req, res) => {
   const text = `%${req.query.text.trim().toLowerCase()}%`;
   const city = req.query.city;
