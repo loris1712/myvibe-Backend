@@ -667,8 +667,11 @@ router.post('/savePlan', async (req, res) => {
         }
 
         const planId = insertResults.insertId;
-        const insertStopQuery = 'INSERT INTO event_planned_stops (id_event, stop_order, id_spot, time) VALUES ?';
-        const stopValues = stops.map((stop, index) => [planId, index + 1, stop.venue_id, stop.time]);
+        const insertStopQuery = 'INSERT INTO event_planned_stops (id_event, stop_order, id_spot, time, manual_address) VALUES ?';
+        const stopValues = stops.map((stop, index) => {
+          const manualAddress = stop.venue_manual_address ? stop.venue_manual_address : null;
+          return [planId, index + 1, stop.venue_id, stop.time, manualAddress];
+        });
         const formattedQuery = mysql.format(insertStopQuery, [stopValues]);
 
         pool.query(formattedQuery, (insertError, insertResults) => {
@@ -720,11 +723,10 @@ router.get('/getPlan', (req, res) => {
 
 router.get('/getPlanStops', (req, res) => { 
   const id_plan = req.query.idPlan;
-  
   const query = `
   SELECT eps.*, pl.* 
   FROM event_planned_stops eps
-  JOIN placesList pl ON eps.id_spot = pl.spot_id
+  LEFT JOIN placesList pl ON eps.id_spot = pl.spot_id
   WHERE eps.id_event = ?
   ORDER BY eps.stop_order ASC;
   `;
@@ -734,7 +736,8 @@ router.get('/getPlanStops', (req, res) => {
       console.error('Query error:', err);
       res.status(500).json({ error: 'Server error' });
       return;
-    }
+    } 
+
 
     res.json(results);
   });
