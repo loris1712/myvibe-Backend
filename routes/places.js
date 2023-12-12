@@ -766,8 +766,6 @@ router.get('/getPlanStops', (req, res) => {
       res.status(500).json({ error: 'Server error' });
       return;
     } 
-
-
     res.json(results);
   });
 });
@@ -825,5 +823,119 @@ router.post('/acceptPlan', async (req, res) => {
     return res.status(500).json({ error: 'An error occurred. Please try again later.' });
   }
 });
+
+router.get('/getFullPlanDetails', (req, res) => {
+  const id_plan = req.query.idPlan;
+
+  // Creiamo un oggetto per raccogliere i risultati
+  let fullPlanDetails = {
+    participants: null,
+    plan: null,
+    planStops: null
+  };
+
+  // Prima query per ottenere i partecipanti
+  pool.query('SELECT * FROM event_participants WHERE id_event = ? ORDER BY email ASC', [id_plan], (err, participants) => {
+    if (err) {
+      console.error('Query error:', err);
+      res.status(500).json({ error: 'Error fetching participants' });
+      return;
+    }
+    fullPlanDetails.participants = participants;
+
+    // Seconda query per ottenere il piano
+    pool.query('SELECT * FROM event_planned WHERE id_event = ?', [id_plan], (err, plan) => {
+      if (err) {
+        console.error('Query error:', err);
+        res.status(500).json({ error: 'Error fetching plan' });
+        return;
+      }
+      fullPlanDetails.plan = plan;
+
+      // Terza query per ottenere le fermate del piano
+      pool.query(`
+        SELECT eps.*, pl.* 
+        FROM event_planned_stops eps
+        LEFT JOIN placesList pl ON eps.id_spot = pl.spot_id
+        WHERE eps.id_event = ?
+        ORDER BY eps.stop_order ASC;`, [id_plan], (err, planStops) => {
+        if (err) {
+          console.error('Query error:', err);
+          res.status(500).json({ error: 'Error fetching plan stops' });
+          return;
+        }
+        fullPlanDetails.planStops = planStops;
+
+        // Invia i risultati
+        res.json(fullPlanDetails);
+      });
+    });
+  });
+});
+
+router.delete('/deleteParticipant', (req, res) => {
+  const email = req.body.email; 
+
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+
+  const query = 'DELETE FROM event_participants WHERE email = ?';
+
+  pool.query(query, [email], (err, result) => {
+    if (err) {
+      console.error('Query error:', err);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Participant not found' });
+    }
+
+    res.json({ message: 'Participant deleted successfully' });
+  });
+});
+
+router.post('/unlockPlan', (req, res) => {
+  const email = req.body.email;
+  const plan_id = req.body.plan_id;
+
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+
+  // Prima query per ottenere l'ID dell'utente dalla tabella users
+  pool.query('SELECT id FROM users WHERE email = ?', [email], (err, users) => {
+    if (err) {
+      console.error('Query error:', err);
+      res.status(500).json({ error: 'Server error' });
+      return;
+    }
+
+    if (users.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const userId = users[0].id;
+
+    // Seconda query per controllare se esiste un evento per questo utente
+    pool.query('SELECT * FROM event_planned WHERE user_id = ? AND id_event = ?', [userId, plan_id], (err, events) => {
+      if (err) {
+        console.error('Query error:', err);
+        res.status(500).json({ error: 'Server error' });
+        return;
+      }
+
+      if (events.length === 0) {
+        return res.status(404).json({ error: 'No events found for this user' });
+      }
+
+      res.status(200).json(events);
+    });
+  });
+});
+
+
+
 
 module.exports = router;
