@@ -4,6 +4,8 @@ const mysql = require('mysql');
 
 const natural = require('natural');
 const tokenizer = new natural.WordTokenizer();
+const { createEvent } = require('ics');
+const nodemailer = require('nodemailer');
 
 // Configurazione del database
 const dbConfig = {
@@ -934,8 +936,5 @@ router.post('/unlockPlan', (req, res) => {
     });
   });
 });
-
-
-
 
 module.exports = router;
