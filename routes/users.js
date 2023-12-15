@@ -298,6 +298,10 @@ router.post('/addResponsessUser', async (req, res) => {
   const question4JSON = JSON.stringify(question4);
   const question5JSON = JSON.stringify(question5);
 
+  if(highestScore < 1){
+    highestScore = 1
+  };
+
   try {
     const updateQuery = 'UPDATE users SET question1 = ?, question2 = ?, question3 = ?, question4 = ?, question5 = ?, Persona = ? WHERE id = ?';
       pool.query(updateQuery, [question1JSON, question2JSON, question3JSON, question4JSON, question5JSON, highestScore, uid], (updateError, updateResults) => {
