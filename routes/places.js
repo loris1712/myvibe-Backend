@@ -720,6 +720,26 @@ router.post('/savePlan', async (req, res) => {
   }
 });
 
+router.post('/updatePlan', async (req, res) => {
+  const { userId, date, title, planId } = req.body; // Assicurati che planId sia incluso nella richiesta
+  
+  try {
+      const updateQuery = 'UPDATE event_planned SET user_id = ?, date_event = ?, title = ? WHERE id_event = ?';
+      pool.query(updateQuery, [userId, date, title, planId], (updateError, updateResults) => {
+        if (updateError) {
+          console.error(updateError);
+          return res.status(500).json({ error: 'An error occurred. Please try again later.' });
+        }
+
+        return res.status(200).json({ status: 200, planId: planId });
+      });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'An error occurred. Please try again later.' });
+  }
+});
+
+
 router.get('/getPlans', (req, res) => { 
   const user_id = req.query.userId;
   
