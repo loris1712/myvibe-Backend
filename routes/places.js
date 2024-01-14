@@ -2,11 +2,6 @@ const express = require('express');
 const router = express.Router();
 const mysql = require('mysql');
 
-const natural = require('natural');
-const tokenizer = new natural.WordTokenizer();
-const { createEvent } = require('ics');
-const nodemailer = require('nodemailer');
-
 // Configurazione del database
 const dbConfig = {
   connectionLimit : 1000,
@@ -26,6 +21,73 @@ pool.query('SELECT 1 + 1', (err, rows) => {
     return;
   }
   //console.log('Query executed successfully:', rows);
+});
+
+// Rotta per ottenere tutti i luoghi
+router.get('/placesLight', (req, res) => {
+  const cityName = req.query.cityName; // Assuming the city name is passed as a query parameter
+  const id = req.query.id; // Assuming the city name is passed as a query parameter
+  
+  const query = `
+  SELECT ns.name, ns.spot_id, ns.working_hours_old_format, ns.latitude, ns.longitude, 
+  ns.range_value, ns.full_address, ns.category, ns.photo, ns.logo, ns.Music, ns.Dresscode, ns.range_value, ns.reservation_links
+  FROM placesList ns
+  JOIN Cities c ON ns.city_id = c.city_id
+  LEFT JOIN NightlifeSpots_Vibes nsv ON ns.spot_id = nsv.spot_id
+  LEFT JOIN Vibes v ON nsv.vibe_id = v.vibe_id
+  JOIN users u ON u.id = ?
+  WHERE c.city_name = ?
+  AND (
+      (u.Persona IN (1, 4, 8, 11) AND 
+       (FIND_IN_SET('1', ns.Personas) > 0 OR FIND_IN_SET('4', ns.Personas) > 0 OR FIND_IN_SET('8', ns.Personas) > 0 OR FIND_IN_SET('11', ns.Personas) > 0))
+      OR
+      (u.Persona IN (2, 7) AND 
+       (FIND_IN_SET('2', ns.Personas) > 0 OR FIND_IN_SET('7', ns.Personas) > 0))
+      OR
+      (u.Persona IN (3, 12, 15) AND 
+       (FIND_IN_SET('3', ns.Personas) > 0 OR FIND_IN_SET('12', ns.Personas) > 0 OR FIND_IN_SET('15', ns.Personas) > 0))
+      OR
+      (u.Persona IN (5, 9, 14) AND 
+       (FIND_IN_SET('5', ns.Personas) > 0 OR FIND_IN_SET('9', ns.Personas) > 0 OR FIND_IN_SET('14', ns.Personas) > 0))
+      OR
+      (u.Persona IN (6, 10, 13) AND 
+       (FIND_IN_SET('6', ns.Personas) > 0 OR FIND_IN_SET('10', ns.Personas) > 0 OR FIND_IN_SET('13', ns.Personas) > 0))
+  )
+    
+  `; 
+
+  pool.query(query, [id, cityName], (err, results) => {
+    if (err) {
+      console.error('Query error:', err);
+      res.status(500).json({ error: 'Server error' });
+      return;
+    }
+    
+    //console.log('Done');
+    res.json(results);
+    
+  });
+});
+
+router.get('/getPlaceDetails', (req, res) => {
+  const spot_id = req.query.spot_id; 
+  
+  const query = `
+    SELECT *, spot_id
+    FROM placesList 
+    WHERE spot_id = ?
+    `;
+
+  pool.query(query, [spot_id], (err, results) => {
+    if (err) {
+      console.error('Query error:', err);
+      res.status(500).json({ error: 'Server error' });
+      return;
+    }
+    
+    
+    res.json(results);
+  });
 });
 
 // Rotta per ottenere tutti i luoghi
@@ -149,6 +211,60 @@ router.get('/holidayPlaces', (req, res) => {
     res.json(results);
   });
 });
+
+router.get('/searchLight', (req, res) => {
+    const text = `%${req.query.text.trim().toLowerCase()}%`;
+    const city = req.query.city;
+  
+    const baseQuery = `
+      SELECT c.city_name, ns.name, ns.spot_id, ns.working_hours_old_format, ns.latitude, ns.longitude, 
+      ns.range_value, ns.full_address, ns.category, ns.photo, ns.logo, ns.Music, ns.Dresscode, ns.range_value, ns.reservation_links
+      FROM placesList ns
+      JOIN Cities c ON ns.city_id = c.city_id
+      WHERE (
+        LOWER(ns.name) LIKE ? OR 
+        LOWER(ns.query) LIKE ? OR 
+        LOWER(ns.Music) LIKE ? OR 
+        LOWER(ns.Dresscode) LIKE ? OR
+        LOWER(ns.type) LIKE ? OR 
+        LOWER(ns.subtypes) LIKE ? OR
+        LOWER(ns.street) LIKE ? OR
+        LOWER(ns.description) LIKE ?
+      )
+    `;
+  
+    const cityQuery = city ? `${baseQuery} AND c.city_name = ? LIMIT 35;` : `${baseQuery} LIMIT 35;`;
+  
+    pool.query(cityQuery, city ? [text, text, text, text, text, text, text, text, city] : [text, text, text, text, text, text, text, text], (err, results) => {
+      if (err) {
+        console.error('Query error:', err);
+        res.status(500).json({ error: 'Server error' });
+        return;
+      }
+  
+      if (results.length === 0) {
+        const randomQuery = `
+          SELECT ns.spot_id, ns.*, c.city_name
+          FROM placesList ns
+          JOIN Cities c ON ns.city_id = c.city_id
+          ORDER BY RAND()
+          LIMIT 35;
+        `;
+  
+        pool.query(randomQuery, (randomErr, randomResults) => {
+          if (randomErr) {
+            console.error('Random query error:', randomErr);
+            res.status(500).json({ error: 'Server error' });
+            return;
+          }
+  
+          res.status(200).json({ source: 'Random results as no direct matches found.', results: randomResults });
+        });
+      } else {
+        res.status(200).json({ results });
+      }
+    });
+  });
 
 router.get('/search', (req, res) => {
   const text = `%${req.query.text.trim().toLowerCase()}%`;
@@ -440,6 +556,98 @@ router.get('/placesFiltered', (req, res) => {
   });
 });
 
+router.get('/placesFilteredLight', (req, res) => {
+  const cityName = req.query.cityName;
+  const category = req.query.category;
+  const prices = req.query.price;
+  const music = req.query.music;
+  const dresscode = req.query.dresscode;
+  const food = req.query.food;
+  const reservation = req.query.reservation;
+  const id = req.query.id;
+
+  let query = `
+  SELECT ns.name, ns.spot_id, ns.working_hours_old_format, ns.latitude, ns.longitude, 
+  ns.range_value, ns.full_address, ns.category, ns.photo, ns.logo, ns.Music, ns.Dresscode, ns.range_value, ns.reservation_links
+    FROM placesList ns
+    JOIN Cities c ON ns.city_id = c.city_id
+    LEFT JOIN NightlifeSpots_Vibes nsv ON ns.spot_id = nsv.spot_id
+    LEFT JOIN Vibes v ON nsv.vibe_id = v.vibe_id
+    JOIN users u ON u.id = ? 
+    AND (
+      (u.Persona IN (1, 4, 8, 11) AND 
+       (FIND_IN_SET('1', ns.Personas) > 0 OR FIND_IN_SET('4', ns.Personas) > 0 OR FIND_IN_SET('8', ns.Personas) > 0 OR FIND_IN_SET('11', ns.Personas) > 0))
+      OR
+      (u.Persona IN (2, 7) AND 
+       (FIND_IN_SET('2', ns.Personas) > 0 OR FIND_IN_SET('7', ns.Personas) > 0))
+      OR
+      (u.Persona IN (3, 12, 15) AND 
+       (FIND_IN_SET('3', ns.Personas) > 0 OR FIND_IN_SET('12', ns.Personas) > 0 OR FIND_IN_SET('15', ns.Personas) > 0))
+      OR
+      (u.Persona IN (5, 9, 14) AND 
+       (FIND_IN_SET('5', ns.Personas) > 0 OR FIND_IN_SET('9', ns.Personas) > 0 OR FIND_IN_SET('14', ns.Personas) > 0))
+      OR
+      (u.Persona IN (6, 10, 13) AND 
+       (FIND_IN_SET('6', ns.Personas) > 0 OR FIND_IN_SET('10', ns.Personas) > 0 OR FIND_IN_SET('13', ns.Personas) > 0))
+  )
+  `;
+
+  const params = [id]; // Inseriamo l'ID nei parametri
+
+  if (cityName) {
+    query += ' AND c.city_name = ?';
+    params.push(cityName);
+  }
+
+  if (category) {
+    query += ' AND ns.category LIKE ?';
+    params.push(`%${category}%`);
+  }
+
+  if (prices) {
+    const priceArray = prices.split(',');
+    const placeholders = priceArray.map(() => '?').join(',');
+    query += ` AND ns.range_value IN (${placeholders})`;
+    params.push(...priceArray);
+  }
+
+  if (music) {
+    query += ' AND ns.Music LIKE ?';
+    params.push(`%${music}%`);
+  }
+
+  if (dresscode) {
+    query += ' AND ns.Dresscode LIKE ?';
+    params.push(`%${dresscode}%`);
+  }
+
+  if (food) {
+    if (food === 'yes') {
+      query += ' AND ns.food = 1';
+    } else if (food === 'no') {
+      query += ' AND ns.food = 0';
+    }
+  }
+
+  if (reservation) {
+    query += " AND ns.reservation_links IS NOT NULL AND ns.reservation_links <> ''";
+    params.push(reservation);
+}
+
+  query += ' GROUP BY ns.spot_id';
+
+  //console.log(params);
+  //console.log(query);
+
+  pool.query(query, params, (err, results) => {
+    if (err) {
+      console.error('Query error:', err);
+      res.status(500).json({ error: 'Server error' });
+      return;
+    }
+    res.json(results);
+  });
+});
 
 router.get('/cities', (req, res) => {
   
@@ -540,13 +748,78 @@ router.get('/listPlacesFiltered', (req, res) => {
   });
 });
 
+router.get('/suggestedPlacesLight', (req, res) => {
+  const music = req.query.music;
+  const dressCode = req.query.dresscode;
+  const busiestDay = req.query.busiestday;
+  const openingHours = req.query.openinghours;
+  const pricing = req.query.pricing;
+  const category = req.query.category;
+  const city_id = req.query.city_id;
+
+  let query = `
+  SELECT ns.name, ns.spot_id, ns.working_hours_old_format, ns.latitude, ns.longitude, 
+    ns.range_value, ns.full_address, ns.category, ns.photo, ns.logo, ns.Music, ns.Dresscode, ns.range_value, ns.reservation_links
+    FROM placesList ns
+    JOIN Cities c ON ns.city_id = c.city_id
+    WHERE 1=1
+  `;
+
+  let conditions = [];
+
+  if (music) {
+    query += ' AND ns.Music LIKE ?';
+    conditions.push(`%${music}%`);
+  }
+
+  if (city_id) {
+    query += ' AND ns.city_id = ?';
+    conditions.push(city_id);
+  }
+
+  if (dressCode) {
+    query += ' AND ns.Dresscode LIKE ?';
+    conditions.push(`%${dressCode}%`);
+  }
+
+  if (busiestDay) {
+    query += ' AND ns.busiest_day LIKE ?';
+    conditions.push(`%${busiestDay}%`);
+  }
+
+  if (openingHours) {
+    query += ' AND ns.working_hours_old_format LIKE ?';
+    conditions.push(`%${openingHours}%`);
+  }
+
+  if (pricing) {
+    query += ' AND ns.range_value LIKE ?';
+    conditions.push(`%${pricing}%`);
+  }
+
+  if (category) {
+    query += ' AND ns.category LIKE ?';
+    conditions.push(`%${category}%`);
+  }
+
+  query += ' ORDER BY RAND() LIMIT 8';
+
+  pool.query(query, conditions, (err, results) => {
+    if (err) {
+      console.error('Query error:', err);
+      res.status(500).json({ error: 'Server error' });
+      return;
+    }
+    res.json(results);
+  });
+});
+
 router.get('/suggestedPlaces', (req, res) => {
   const music = req.query.music;
   const dressCode = req.query.dresscode;
   const busiestDay = req.query.busiestday;
   const openingHours = req.query.openinghours;
   const pricing = req.query.pricing;
-  const cuisine = req.query.cuisine;
   const category = req.query.category;
   const city_id = req.query.city_id;
 
@@ -580,18 +853,13 @@ router.get('/suggestedPlaces', (req, res) => {
   }
 
   if (openingHours) {
-    query += ' AND ns.opening_hours LIKE ?';
+    query += ' AND ns.working_hours_old_format LIKE ?';
     conditions.push(`%${openingHours}%`);
   }
 
   if (pricing) {
     query += ' AND ns.range_value LIKE ?';
     conditions.push(`%${pricing}%`);
-  }
-
-  if (cuisine) {
-    query += ' AND ns.cuisine LIKE ?';
-    conditions.push(`%${cuisine}%`);
   }
 
   if (category) {

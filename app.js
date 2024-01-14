@@ -8,6 +8,7 @@ app.use(cors()); // Usa il middleware CORS per abilitare le richieste da tutti g
 
 const placesRoutes = require('./routes/places');
 const usersRoutes = require('./routes/users');
+const planActionsRoutes = require('./routes/planActions');
 
 app.get('/', (req, res) => {
   res.json({ message: 'API di esempio su Vercel!' });
@@ -18,6 +19,7 @@ app.use('/api', placesRoutes);
 
 // Utilizza le rotte per le chiamate API relative agli utenti
 app.use('/users', usersRoutes);
+app.use('/planActions', planActionsRoutes);
 
 // Altre configurazioni e middleware dell'app Express
 // ...
