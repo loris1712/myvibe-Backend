@@ -652,7 +652,7 @@ router.get('/placesFilteredLight', (req, res) => {
 router.get('/cities', (req, res) => {
   
   const query = `
-    SELECT city_name, city_id, url
+    SELECT city_name, city_id, url, latitude, longitude
     FROM Cities
   `;
 
