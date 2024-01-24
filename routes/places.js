@@ -138,9 +138,9 @@ router.get('/places', (req, res) => {
 // Rotta per ottenere tutti i luoghi
 router.get('/allPlaces', (req, res) => {
   const cityName = req.query.cityName;
-  
+  console.log(cityName)
   const query = `
-    SELECT *, ns.spot_id
+    SELECT *,ns.latitude,ns.longitude, ns.spot_id
     FROM placesList ns
     JOIN Cities c ON ns.city_id = c.city_id
     LEFT JOIN NightlifeSpots_Vibes nsv ON ns.spot_id = nsv.spot_id
@@ -154,6 +154,7 @@ router.get('/allPlaces', (req, res) => {
       res.status(500).json({ error: 'Server error' });
       return;
     }
+    console.log(results[1])
     res.json(results);
   });
 });
