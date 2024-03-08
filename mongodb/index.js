@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-
 mongoose.connect(
   'mongodb+srv://myvbemusr:7IpCjQpio9b1kcpv@auth-cluster.skh7rmf.mongodb.net/usr_srv',
 );
@@ -71,7 +70,7 @@ async function updatePlaceProfile(placeProfileUpdate) {
   return;
 }
 
-const placesDiscovery = async ({ location, preferences }) => {
+const placesDiscovery = async ({ location, preferences, distance }) => {
   try {
     const places = await PlaceProfile.aggregate([
       {
@@ -81,7 +80,7 @@ const placesDiscovery = async ({ location, preferences }) => {
             coordinates: [location?.lat ?? 0, location?.lng ?? 0],
           },
           distanceField: 'distance',
-          maxDistance: 5000,
+          maxDistance: distance ?? 1000,
           spherical: true,
         },
       },

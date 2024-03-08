@@ -85,6 +85,11 @@ router.post('/discover', async (req, resp) => {
   const body = req.body;
   const places = await placesDiscovery(body);
   const placeIds = places?.map((place) => Number(place?.placeId));
+  if(placeIds?.length <= 0){
+    return resp.status(200).send({
+        data: [],
+      });
+  }
   const placesDetails = `SELECT * FROM placesList where spot_id in (${placeIds})`;
   sql.query(placesDetails, (er, results) => {
     if (er) {

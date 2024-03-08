@@ -1,5 +1,6 @@
 const express = require('express');
 const app = express();
+require('dotenv').config();
 const bodyParser = require('body-parser');
 const cors = require('cors'); // Aggiungi questa riga per importare il modulo CORS
 
