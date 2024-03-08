@@ -3,8 +3,12 @@ const Schema = mongoose.Schema;
 
 const PlaceProfileSchema = new Schema({
   id: Schema.ObjectId,
-  placeId: String,
+  placeId: {
+    type: String,
+    unique: true
+  },
   location: Object,
+  address: String,
   preferenceProfile: {
     music: [String],
     outfit: [String],
@@ -13,6 +17,8 @@ const PlaceProfileSchema = new Schema({
     food: [String],
   },
 });
+
+PlaceProfileSchema.index({ location: '2dsphere' });
 
 const PlaceProfile = mongoose.model('place_profile', PlaceProfileSchema);
 
