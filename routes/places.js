@@ -1214,4 +1214,25 @@ router.post('/unlockPlan', (req, res) => {
   });
 });
 
+router.get('/place/:spotId', async (req, resp) => {
+  const {spotId} = req.params;
+  if(!spotId){
+    return resp.status(400).send({
+      message: "Place id missing"
+    });
+  }
+
+  const sql = `select * from placesList where spot_id=${spotId}`;
+  pool.query(sql, (err, result) => {
+    if (err) {
+      return resp.status(500).send({
+        message: "Error fetching place information"
+      })
+    }
+    return resp.status(200).send({
+      data: result[0]
+    })
+  });
+})
+
 module.exports = router;
