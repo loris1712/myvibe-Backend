@@ -3,16 +3,10 @@ const router = express.Router();
 const mysql = require('mysql');
 const bcrypt = require('bcryptjs');
 
-// Configurazione del database
-const dbConfig = {
-    host: '31.22.4.229',
-    user: 'placesmy_root',
-    password: '123Loris.',
-    database: 'placesmy_locations'
-  };
+
 
 // Creazione del pool di connessioni al database
-const pool = mysql.createPool(dbConfig);
+const pool =require('../mysql');
 
 // Esegui la query utilizzando il pool di connessioni
 pool.query('SELECT 1 + 1', (err, rows) => {
