@@ -4,9 +4,10 @@ const router = express.Router();
 const {
   createPlaceProfile,
   createPlaceProfileBulk,
-  placesDiscovery
+  placesDiscovery,
 } = require('../mongodb/index');
-const sql = require('../mysql')
+
+const sql = require('../mysql');
 
 router.get('/migrate', (req, resp) => {
   // ;
@@ -39,21 +40,19 @@ router.get('/migrate', (req, resp) => {
           ?.map((item) => item.toLocaleLowerCase().trim()),
       },
     }));
-    try{
-        await createPlaceProfileBulk(placesFormat);
-        return resp.status(201).send({
-            message: "Migration done"
-        });
-    }catch(e){
-        return resp.status(500).send(e);
+    try {
+      await createPlaceProfileBulk(placesFormat);
+      return resp.status(201).send({
+        message: 'Migration done',
+      });
+    } catch (e) {
+      return resp.status(500).send(e);
     }
-    
   });
 });
 
 router.post('/', async (req, resp) => {
   const profile = req.body;
-
 
   if (!profile?.placeId) {
     return resp.status(400).send({
@@ -80,15 +79,24 @@ router.post('/', async (req, resp) => {
   resp.status(201).send({
     data: saved,
   });
-})
+});
 
 router.post('/discover', async (req, resp) => {
-    const body = req.body;
-    const places = await placesDiscovery(body);
+  const body = req.body;
+  const places = await placesDiscovery(body);
+  const placeIds = places?.map((place) => Number(place?.placeId));
+  const placesDetails = `SELECT * FROM placesList where spot_id in (${placeIds})`;
+  sql.query(placesDetails, (er, results) => {
+    if (er) {
+      console.log(er);
+      return resp.status(200).send({
+        data: [],
+      });
+    }
     return resp.status(200).send({
-        data: places
-    })
-})
+      data: results,
+    });
+  });
+});
 
-
-module.exports = router
+module.exports = router;

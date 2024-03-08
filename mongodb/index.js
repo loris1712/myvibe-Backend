@@ -81,7 +81,7 @@ const placesDiscovery = async ({ location, preferences }) => {
             coordinates: [location?.lat ?? 0, location?.lng ?? 0],
           },
           distanceField: 'distance',
-          maxDistance: 50000,
+          maxDistance: 5000,
           spherical: true,
         },
       },
