@@ -8,16 +8,8 @@ require('dotenv').config();
 const sgMail = require('@sendgrid/mail')
 sgMail.setApiKey('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')
 
-// Configurazione del database
-const dbConfig = {
-  connectionLimit : 1000,
-  host: '31.22.4.229',
-  user: 'placesmy_root',
-  password: '123Loris.',
-  database: 'placesmy_locations'
-};
 
-const pool = mysql.createPool(dbConfig);
+const pool = require('../mysql');
 
 pool.query('SELECT 1 + 1', (err, rows) => {
   if (err) {
