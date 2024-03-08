@@ -4,6 +4,7 @@ const router = express.Router();
 const {
   createPlaceProfile,
   createPlaceProfileBulk,
+  placesDiscovery
 } = require('../mongodb/index');
 const sql = require('../mysql')
 
@@ -79,6 +80,14 @@ router.post('/', async (req, resp) => {
   resp.status(201).send({
     data: saved,
   });
+})
+
+router.post('/discover', async (req, resp) => {
+    const body = req.body;
+    const places = await placesDiscovery(body);
+    return resp.status(200).send({
+        data: places
+    })
 })
 
 

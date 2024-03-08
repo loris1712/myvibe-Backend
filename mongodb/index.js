@@ -71,8 +71,58 @@ async function updatePlaceProfile(placeProfileUpdate) {
   return;
 }
 
+const placesDiscovery = async ({ location, preferences }) => {
+  try {
+    const places = await PlaceProfile.aggregate([
+      {
+        $geoNear: {
+          near: {
+            type: 'Point',
+            coordinates: [location?.lat ?? 0, location?.lng ?? 0],
+          },
+          distanceField: 'distance',
+          maxDistance: 50000,
+          spherical: true,
+        },
+      },
+      {
+        $match: {
+          $expr: {
+            $size: {
+              $setIntersection: [
+                '$preferenceProfile.outfit',
+                preferences?.outfit ?? [''],
+              ],
+              $setIntersection: [
+                '$preferenceProfile.music',
+                preferences?.music ?? [''],
+              ],
+              $setIntersection: [
+                '$preferenceProfile.culture',
+                preferences?.culture ?? [''],
+              ],
+              $setIntersection: [
+                '$preferenceProfile.mood',
+                preferences?.mood ?? [''],
+              ],
+              $setIntersection: [
+                '$preferenceProfile.food',
+                preferences?.food ?? [''],
+              ],
+            },
+          },
+        },
+      },
+    ]);
+    return places;
+  } catch (e) {
+    return [];
+  }
+};
+
 module.exports = {
   createPlaceProfile,
   createPlaceProfileBulk,
   updatePlaceProfile,
+  placesDiscovery,
 };
