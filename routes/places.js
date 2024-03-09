@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../mysql/index')
+const pool = require('../mysql/index').pool;
 
 // Esegui la query utilizzando il pool di connessioni
 pool.query('SELECT 1 + 1', (err, rows) => {
