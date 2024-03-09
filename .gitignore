@@ -1,3 +1,7 @@
-.vercel
+node_modules
 node_modules/
 *node_modules/*
+node_modules/**/*
+.vercel
+node_modules/browserslist/node.js
+node_modules/*
