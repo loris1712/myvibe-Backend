@@ -12,6 +12,7 @@ const placesRoutes = require('./routes/places');
 const usersRoutes = require('./routes/users');
 const planActionsRoutes = require('./routes/planActions');
 const placeProfile = require('./routes/placeProfile');
+const userPlansRoute = require('./routes/userPlan')
 
 app.get('/', (req, res) => {
   res.json({ message: 'API di esempio su Vercel!' });
@@ -21,6 +22,7 @@ app.get('/', (req, res) => {
 app.use('/api', placesRoutes);
 
 app.use('/api/places-profile', placeProfile);
+app.use('/api/plans', userPlansRoute);
 
 // Utilizza le rotte per le chiamate API relative agli utenti
 app.use('/users', usersRoutes);
@@ -40,7 +42,7 @@ app.listen(port, () => {
     }
     console.log('Query executed successfully:', rows);
   });
-  sequelize.authenticate().then(() => {
+  sequelize.authenticate().then(async() => {
     console.log('Sequelize connected');
   });
 });
