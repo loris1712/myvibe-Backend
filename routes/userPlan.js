@@ -1,7 +1,7 @@
 const Exporess = require('express');
 const router = Exporess.Router();
 
-const { createUserPlan, getPlanById,getUserPlans, getUserPlansInPlace } = require('../mysql/services/userPlanService');
+const { createUserPlan, getPlanById,getUserPlans, getUserPlansInPlace, deleteUserPlan } = require('../mysql/services/userPlanService');
 
 router.post('/create', async (req, resp) => {
   const payload = req.body;
@@ -75,6 +75,28 @@ router.get('/user/:userId/:placeId/plans', async (req, resp) => {
       data: plans,
     });
 })
+
+
+router.delete('/:userId/:planId',async (req, resp)=> {
+        const { userId, planId } = req.params;
+        if (!userId || !planId) {
+          return resp.status(400).send({
+            message: 'userId or planId not found',
+          });
+        }
+
+        const deleted = await deleteUserPlan(userId, planId);
+        if(deleted){
+            return resp.status(200).send({
+                data: null
+            })
+        }else {
+            return resp.status(500).send({
+              message: "Error deleting plan",
+            });
+        }
+
+});
 
 
 

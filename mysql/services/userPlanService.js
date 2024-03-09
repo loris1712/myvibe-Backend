@@ -67,9 +67,24 @@ async function getUserPlansInPlace(userId, placeId){
     }
 }
 
+async function deleteUserPlan(userId, planId){
+    try{
+        await UserPlan.destroy({
+          where: {
+            user_id: Number(userId),
+            id: Number(planId),
+          },
+        });
+        return true;
+    }catch(e){
+        return false
+    }
+}
+
 module.exports = {
   createUserPlan,
   getUserPlans,
   getPlanById,
   getUserPlansInPlace,
+  deleteUserPlan,
 };
