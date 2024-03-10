@@ -2,14 +2,6 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../mysql/index').pool;
 
-// Esegui la query utilizzando il pool di connessioni
-pool.query('SELECT 1 + 1', (err, rows) => {
-  if (err) {
-    console.error('Query error:', err);
-    return;
-  }
-  //console.log('Query executed successfully:', rows);
-});
 
 // Rotta per ottenere tutti i luoghi
 router.get('/placesLight', (req, res) => {

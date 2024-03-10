@@ -7,11 +7,11 @@ const {
   placesDiscovery,
 } = require('../mongodb/index');
 
-const sql = require('../mysql');
+const pool = require('../mysql').pool;
 
 router.get('/migrate', (req, resp) => {
   // ;
-  sql.query('SELECT * FROM placesList', async (err, results) => {
+  pool.query('SELECT * FROM placesList', async (err, results) => {
     if (err) {
       return;
     }
@@ -91,7 +91,7 @@ router.post('/discover', async (req, resp) => {
       });
   }
   const placesDetails = `SELECT * FROM placesList where spot_id in (${placeIds})`;
-  sql.query(placesDetails, (er, results) => {
+  pool.query(placesDetails, (er, results) => {
     if (er) {
       console.log(er);
       return resp.status(200).send({
