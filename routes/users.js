@@ -6,16 +6,8 @@ const bcrypt = require('bcryptjs');
 
 
 // Creazione del pool di connessioni al database
-const pool =require('../mysql').pool;
+const pool = require('../mysql').pool;
 
-// Esegui la query utilizzando il pool di connessioni
-pool.query('SELECT 1 + 1', (err, rows) => {
-  if (err) {
-    console.error('Query error:', err);
-    return;
-  }
-  console.log('Query executed successfully:', rows);
-});
 
 // Get user
 router.get('/user', (req, res) => {

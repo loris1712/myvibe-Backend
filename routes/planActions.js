@@ -9,15 +9,6 @@ const sgMail = require('@sendgrid/mail')
 sgMail.setApiKey('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')
 
 
-const pool = require('../mysql').pool;
-
-pool.query('SELECT 1 + 1', (err, rows) => {
-  if (err) {
-    console.error('Query error:', err);
-    return;
-  }
-});
-
 function replaceTemplate(template, values) {
   let output = template;
   for (let key in values) {
