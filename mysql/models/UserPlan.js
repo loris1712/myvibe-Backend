@@ -8,20 +8,23 @@ const UserPlan = sequelize.define('user_plan', {
   privacy: {
     type: DataTypes.ENUM('public', 'private')
   },
+  name: {
+    type: DataTypes.STRING
+  },
   plan_date: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING
   },
   music: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING
   },
   dresscode: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING
   },
   description: {
     type: DataTypes.TEXT,
   },
   capacity: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.INTEGER
   },
   links: {
     type: DataTypes.TEXT,

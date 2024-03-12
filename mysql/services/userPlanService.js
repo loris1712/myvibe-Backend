@@ -9,6 +9,7 @@ async function createUserPlan(payload) {
     const plan = await UserPlan.create({
       user_id: payload.userId,
       privacy: payload.privacy ?? 'private',
+      name: payload.name,
       plan_date: payload.planDate,
       music: payload.music,
       dresscode: payload.dresscode,
