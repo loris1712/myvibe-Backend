@@ -26,6 +26,10 @@ const UserPlan = sequelize.define('user_plan', {
   capacity: {
     type: DataTypes.INTEGER
   },
+  is_completed:{
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
   links: {
     type: DataTypes.TEXT,
     set(value) {
