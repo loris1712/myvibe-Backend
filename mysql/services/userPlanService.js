@@ -15,12 +15,14 @@ async function createUserPlan(payload) {
       dresscode: payload.dresscode,
       description: payload.description,
       capacity: payload.capacity ?? 1,
+      is_completed:false,
       links: payload.links ?? {},
       stops: payload.stops ?? [],
     });
 
     return plan;
-  } catch (e) {
+  } catch (createPlanError) {
+    console.log({ createPlanError });
     return null;
   }
 }
