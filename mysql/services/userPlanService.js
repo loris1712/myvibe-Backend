@@ -9,17 +9,20 @@ async function createUserPlan(payload) {
     const plan = await UserPlan.create({
       user_id: payload.userId,
       privacy: payload.privacy ?? 'private',
+      name: payload.name,
       plan_date: payload.planDate,
       music: payload.music,
       dresscode: payload.dresscode,
       description: payload.description,
       capacity: payload.capacity ?? 1,
+      is_completed:false,
       links: payload.links ?? {},
       stops: payload.stops ?? [],
     });
 
     return plan;
-  } catch (e) {
+  } catch (createPlanError) {
+    console.log({ createPlanError });
     return null;
   }
 }

@@ -77,7 +77,7 @@ router.get('/user/:userId/:placeId/plans', async (req, resp) => {
 })
 
 
-router.delete('/:userId/:planId',async (req, resp)=> {
+router.delete('/:userId/:planId', async (req, resp)=> {
         const { userId, planId } = req.params;
         if (!userId || !planId) {
           return resp.status(400).send({
