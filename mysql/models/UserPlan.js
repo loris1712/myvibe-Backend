@@ -30,6 +30,9 @@ const UserPlan = sequelize.define('user_plan', {
     type: DataTypes.BOOLEAN,
     defaultValue: false
   },
+  cover_url:{
+    type: DataTypes.STRING
+  },
   links: {
     type: DataTypes.TEXT,
     set(value) {

@@ -16,6 +16,7 @@ async function createUserPlan(payload) {
       description: payload.description,
       capacity: payload.capacity ?? 1,
       is_completed:false,
+      cover_url:payload.imageURL,
       links: payload.links ?? {},
       stops: payload.stops ?? [],
     });
@@ -52,7 +53,6 @@ async function getUserPlans(userId){
         return null
     }
 };
-
 
 async function getUserPlansInPlace(userId, placeId){
     try{
