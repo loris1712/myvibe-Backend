@@ -1,7 +1,11 @@
 const mongoose = require('mongoose');
 mongoose.connect(
   'mongodb+srv://myvbemusr:7IpCjQpio9b1kcpv@auth-cluster.skh7rmf.mongodb.net/usr_srv',
-);
+).then(()=> {
+  console.log("MONGO CONNECTED")
+}).catch((e)=> {
+  console.log("MONGO CONNECTION ERROR "+e)
+});
 
 const PlaceProfile = require('./models/PlaceProfile');
 
