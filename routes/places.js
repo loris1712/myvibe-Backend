@@ -65,7 +65,6 @@ router.get('/getPlaceDetails', (req, res) => {
       return;
     }
     
-    
     res.json(results);
   });
 });
