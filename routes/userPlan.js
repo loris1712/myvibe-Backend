@@ -242,4 +242,33 @@ router.post('/saveRSVP/:plan_id/:user_id', async (req, resp)=> {
   }
 });
 
+router.post('/getRSVPsPlan/:plan_id', async (req, resp)=> {
+  const { plan_id } = req.params;
+
+  try {
+    const selectQuery = `
+      SELECT u.email
+      FROM event_participants ep
+      INNER JOIN users u ON ep.user_id = u.id
+      WHERE ep.id_event = ?;
+    `;
+
+    pool.query(selectQuery, [plan_id], (selectError, selectResults) => {
+      if (selectError) {
+        console.error(selectError);
+        return resp.status(500).json({ error: 'An error occurred while fetching participants.' });
+      } 
+
+      const emails = selectResults.map(result => result.email);
+      const emailCount = selectResults.length;
+ 
+      console.log(emailCount)
+      return resp.status(200).json({ emails: emails, emailCount: emailCount });
+    });
+  } catch (error) {
+    console.error(error);
+    return resp.status(500).json({ error: 'An error occurred. Please try again later.' });
+  }
+});
+
 module.exports = router;
