@@ -287,7 +287,7 @@ router.post('/addResponsessUser', async (req, res) => {
   if(highestScore < 1){
     highestScore = 1
   };
-
+ 
   try {
     const updateQuery = 'UPDATE users SET question1 = ?, question2 = ?, question3 = ?, question4 = ?, question5 = ?, Persona = ? WHERE id = ?';
       pool.query(updateQuery, [question1JSON, question2JSON, question3JSON, question4JSON, question5JSON, highestScore, uid], (updateError, updateResults) => {
@@ -296,7 +296,6 @@ router.post('/addResponsessUser', async (req, res) => {
           return res.status(500).json({ error: 'An error occurred. Please try again later.' });
         }
 
-        // Se l'aggiornamento è avvenuto con successo, esegui la query per cercare l'email
         const selectQuery = 'SELECT * FROM users WHERE id = ?';
         pool.query(selectQuery, [uid], (selectError, selectResults) => {
           if (selectError) {
@@ -304,14 +303,12 @@ router.post('/addResponsessUser', async (req, res) => {
             return res.status(500).json({ error: 'An error occurred. Please try again later.' });
           }
 
-          // Se la query di ricerca ha restituito dei risultati, invia il valore di uid e email come risposta
           if (selectResults.length > 0) {
             const { uid, email } = selectResults[0];
             
             return res.status(200).json({ uid: uid, email: email });
           }
 
-          // Altrimenti, invia una risposta vuota o un messaggio di errore appropriato
           return res.status(200).json({ uid: '', email: '' });
         });
       });
@@ -346,7 +343,6 @@ router.get('/getEmail', async (req, res) => {
   const uid = req.query.uid;
 
   try {
-    // L'email non è presente nel database, procedi con la creazione dell'utente
     const query = `
     SELECT email
     FROM users
@@ -360,6 +356,85 @@ router.get('/getEmail', async (req, res) => {
 
         res.json(updateResults);
       }); 
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'An error occurred. Please try again later.' });
+  }
+}); 
+
+router.get('/getUserDetails/:user_id', async (req, res) => {
+  const { user_id } = req.params;
+
+  try {
+    const query = `
+      SELECT *
+      FROM user_info
+      WHERE user_id = ?
+    `; 
+    pool.query(query, [user_id], (error, results) => {
+      if (error) {
+        console.error(error);
+        return res.status(500).json({ error: 'An error occurred. Please try again later.' });
+      } 
+
+      const userData = results[0];
+      res.json({ data: userData }); 
+    }); 
+  } catch (error) { 
+    console.error(error);
+    return res.status(500).json({ error: 'An error occurred. Please try again later.' });
+  } 
+}); 
+
+router.post('/saveUserInfo', async (req, res) => {
+  const payload = req.body;
+
+  try {
+    const checkQuery = `
+      SELECT user_id
+      FROM user_info
+      WHERE user_id = ?
+    `;
+
+    pool.query(checkQuery, [payload.userId], (checkError, results) => {
+      if (checkError) {
+        console.error(checkError);
+        return res.status(500).json({ error: 'An error occurred. Please try again later.' });
+      }
+
+      if (results.length === 0) {
+        const insertQuery = `
+          INSERT INTO user_info (user_id, bio, instagram_link, phone_number)
+          VALUES (?, ?, ?, ?)
+        `;
+        const insertValues = [payload.userId, payload.bio, payload.instagram_link, payload.phone_number];
+
+        pool.query(insertQuery, insertValues, (insertError, insertResults) => {
+          if (insertError) {
+            console.error(insertError);
+            return res.status(500).json({ error: 'An error occurred while creating user info.' });
+          }
+          return res.status(200).json({ message: 'User info created successfully.' });
+        });
+      } else {
+        const updateQuery = `
+          UPDATE user_info
+          SET bio = ?, instagram_link = ?, phone_number = ?
+          WHERE user_id = ?
+        `;
+        
+        const updateValues = [payload.bio, payload.instagram_link, payload.phone_number, payload.userId];
+
+        pool.query(updateQuery, updateValues, (updateError, updateResults) => {
+          if (updateError) {
+            console.error(updateError);
+            return res.status(500).json({ error: 'An error occurred while updating user info.' });
+          }
+          
+          return res.status(200).json({ message: 'User info updated successfully.' });
+        });
+      }
+    });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: 'An error occurred. Please try again later.' });
