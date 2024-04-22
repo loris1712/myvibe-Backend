@@ -13,7 +13,7 @@ function replaceTemplate(template, values) {
   for (let key in values) {
     console.log(values)
       output = output.replace(new RegExp('{{' + key + '}}', 'g'), values[key]);
-  }
+  } 
   return output;
 }
 
