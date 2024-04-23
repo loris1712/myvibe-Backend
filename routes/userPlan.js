@@ -1,8 +1,13 @@
 const Exporess = require('express');
 const router = Exporess.Router();
 const sgMail = require('@sendgrid/mail')
-sgMail.setApiKey(process.env.SENDGRID_API_KEY)
 const pool = require('../mysql/index').pool;
+
+try {
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+} catch (e) {
+  console.log(e);
+}
 
 const { createUserPlan, updateUserPlan, getPlanById, getUserPlans, getUserPlansInPlace, deleteUserPlan } = require('../mysql/services/userPlanService');
 
