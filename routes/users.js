@@ -430,8 +430,26 @@ router.post('/saveUserInfo', async (req, res) => {
             console.error(updateError);
             return res.status(500).json({ error: 'An error occurred while updating user info.' });
           }
-          
-          return res.status(200).json({ message: 'User info updated successfully.' });
+
+          // Check if payload.name is not empty
+          if (payload.name && payload.name.trim().length > 0) {
+            const updateUserQuery = `
+              UPDATE users
+              SET fullname = ?
+              WHERE user_id = ?
+            `;
+            const updateUserNameValues = [payload.name, payload.userId];
+
+            pool.query(updateUserQuery, updateUserNameValues, (updateUserError, updateUserResults) => {
+              if (updateUserError) {
+                console.error(updateUserError);
+                return res.status(500).json({ error: 'An error occurred while updating user fullname.' });
+              }
+              return res.status(200).json({ message: 'User info and fullname updated successfully.' });
+            });
+          } else {
+            return res.status(200).json({ message: 'User info updated successfully.' });
+          }
         });
       }
     });
