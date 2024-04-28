@@ -6,7 +6,12 @@ const fs = require('fs');
 const ical = require('ical-generator');
 require('dotenv').config();
 const sgMail = require('@sendgrid/mail')
-sgMail.setApiKey(process.env.SENDGRID_API_KEY)
+
+try{
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY)
+}catch(e){
+  console.log(e)
+}
 
 function replaceTemplate(template, values) {
   let output = template;
