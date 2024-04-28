@@ -3,7 +3,7 @@ const router = Exporess.Router();
 const sgMail = require('@sendgrid/mail')
 sgMail.setApiKey(process.env.SENDGRID_API_KEY)
 const pool = require('../mysql/index').pool;
-
+ 
 const { createUserPlan, updateUserPlan, getPlanById, getUserPlans, getUserPlansInPlace, deleteUserPlan } = require('../mysql/services/userPlanService');
 
 async function sendEmail(to, from, subject, templateId, dynamicData) {
@@ -279,6 +279,8 @@ router.post('/saveRSVP/:plan_id/:user_id/:prom_e/:u_e', (req, resp) => {
                   user_email: prom_e,
                   username: userResults[0].fullname,
                 };
+
+                console.log(dynamicData)
 
                 const promoterEmailSent = sendEmail(
                   prom_e,

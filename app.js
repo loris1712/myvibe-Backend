@@ -18,18 +18,13 @@ app.get('/', (req, res) => {
   res.json({ message: 'API di esempio su Vercel!' });
 });
 
-// Utilizza le rotte per le chiamate API relative ai luoghi
 app.use('/api', placesRoutes);
 
 app.use('/api/places-profile', placeProfile);
 app.use('/api/plans', userPlansRoute);
 
-// Utilizza le rotte per le chiamate API relative agli utenti
 app.use('/users', usersRoutes);
 app.use('/planActions', planActionsRoutes);
-
-// Altre configurazioni e middleware dell'app Express
-// ...
 
 const port = process.env.PORT || 3001;
 app.listen(port, () => {
