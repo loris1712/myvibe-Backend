@@ -347,5 +347,5 @@ router.post('/getRSVPsPlan/:plan_id', async (req, resp)=> {
     return resp.status(500).json({ error: 'An error occurred. Please try again later.' });
   }
 });
-
+ 
 module.exports = router;
