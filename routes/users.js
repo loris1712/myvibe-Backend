@@ -436,7 +436,7 @@ router.post('/saveUserInfo', async (req, res) => {
             const updateUserQuery = `
               UPDATE users
               SET fullname = ?
-              WHERE user_id = ?
+              WHERE id = ?
             `;
             const updateUserNameValues = [payload.name, payload.userId];
 
@@ -459,4 +459,4 @@ router.post('/saveUserInfo', async (req, res) => {
   }
 });
 
-module.exports = router; 
+module.exports = router;
