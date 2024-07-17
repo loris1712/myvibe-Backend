@@ -782,7 +782,7 @@ router.get('/suggestedPlacesLight', (req, res) => {
     conditions.push(`%${category}%`);
   }
 
-  query += ' ORDER BY RAND() LIMIT 8';
+  query += ' ORDER BY RAND() LIMIT 75';
 
   pool.query(query, conditions, (err, results) => {
     if (err) {
